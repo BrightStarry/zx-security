@@ -6,6 +6,6 @@ spring:
     password: 123456
   session:
     store-type: none  #暂时关闭spring-session的配置，不然会报错
-security:
-  basic:
-    enabled: false #暂时关闭spring-security的配置，不然会报错
+#security:
+#  basic:
+#    enabled: false #暂时关闭spring-security的配置，不然会报错

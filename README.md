@@ -112,7 +112,7 @@ ReflectionToStringBuilder.toString(userQueryCondition, ToStringStyle.MULTI_LINE_
 1. 在demo中新建com.zx包，然后新建DemoApplication类，并加入@SpringBootApplication注解等。  
 写到这的时候，我才意识到，这就是springBoot项目不依赖spring为父模块，而是依赖自定义的父模块的写法。
 2. 直接在该Application类上写@RestController，然后写个/test
-3. 新建application.yml,配置如下:
+3. 新建application.yml,配置如下(如果不关闭security,默认用户名为user,密码为启动时输出的一串默认密码):
 >
 spring:
   datasource:
@@ -122,6 +122,10 @@ spring:
     password: 123456
   session:
     store-type: none  #暂时关闭spring-session的配置，不然会报错
+  security:
+    basic:
+      enabled: false #暂时关闭spring-security的配置，不然会报错
+  
 >
 4. 注意，此时如果将demo项目打包，只会是一个普通的jar，无法直接运行启动spring boot，  
 还需要在pom.xml中加入，才可以将它包含的依赖一起打包，以便直接用jar运行spring boot,  
@@ -695,3 +699,35 @@ java -jar wiremock-standalone-2.11.0.jar --port 8090
         }
     }
 >
+
+#### SpringSecurity基本原理
+![图片](image/1.png)
+* 过滤器链
+    * 身份验证过滤器(任意一种该过滤器通过后即可),可通过配置决定某一过滤器是否生效(其他过滤器则不行)
+        * UsernamePasswordAuthenticationFilter-处理表单登录
+        * BasicAuthenticationFilter-处理basic(最原始的弹出框)登录
+    * ExceptionTranslationFilter-捕获FilterSecurityInterceptor抛出的异常,作相应处理
+    * 最后一个过滤器(之后就是真正的方法了)
+        * FilterSecurityInterceptor-真正决定当前请求能否访问
+
+#### SpringSecurity表单验证demo-以上的基本都是demo模块,往下开始在browser模块
+1. 在browser模块中新建BrowserSecurityConfig,如下:
+>
+    @Configuration
+    public class BrowserSecurityConfig extends WebSecurityConfigurerAdapter{
+    
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+    //                .httpBasic()//最原始的弹出框登录,二选一
+                    .formLogin()//表单页面登录,二选一
+                    .and()
+                    .authorizeRequests()//进行验证配置
+                    .anyRequest()//任何请求
+                    .authenticated();//都需验证
+    
+        }
+    }
+>
+2. 因为demo模块依赖了browser模块,所以此时再次启动demo模块
+3. 访问任何url,都会进入一个表单验证界面,需要输入帐号密码才可
