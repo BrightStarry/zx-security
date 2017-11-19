@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/zx-security.iml" filepath="$PROJECT_DIR$/zx-security.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zx-security-app/zx-security-app.iml" filepath="$PROJECT_DIR$/zx-security-app/zx-security-app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zx-security-browser/zx-security-browser.iml" filepath="$PROJECT_DIR$/zx-security-browser/zx-security-browser.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zx-security-core/zx-security-core.iml" filepath="$PROJECT_DIR$/zx-security-core/zx-security-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zx-security-demo/zx-security-demo.iml" filepath="$PROJECT_DIR$/zx-security-demo/zx-security-demo.iml" />
+    </modules>
+  </component>
+</project>

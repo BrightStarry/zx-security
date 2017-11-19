@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <option name="BUILD_PROCESS_HEAP_SIZE" value="1024" />
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="zx-security-app" />
+        <module name="zx-security-browser" />
+        <module name="zx-security-core" />
+        <module name="zx-security-demo" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel target="1.8">
+      <module name="zx-security" target="1.8" />
+      <module name="zx-security-app" target="1.8" />
+      <module name="zx-security-browser" target="1.8" />
+      <module name="zx-security-core" target="1.8" />
+      <module name="zx-security-demo" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
