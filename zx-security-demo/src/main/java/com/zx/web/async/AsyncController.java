@@ -45,14 +45,11 @@ public class AsyncController {
 //    @RequestMapping("/order")
 //    public Callable<String> order() throws Exception {
 //        log.info("主线程开始");
-//        Callable<String> result = new Callable<String>() {
-//            @Override
-//            public String call() throws Exception {
-//                log.info("子线程开启");
-//                Thread.sleep(5000L);
-//                log.info("子线程结束");
-//                return "success";
-//            }
+//        Callable<String> result = () -> {
+//            log.info("子线程开启");
+//            Thread.sleep(5000L);
+//            log.info("子线程结束");
+//            return "success";
 //        };
 //        log.info("主线程返回");
 //        return result;

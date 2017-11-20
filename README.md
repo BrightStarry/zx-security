@@ -8,7 +8,11 @@
 * !!!之前遇到HttpClient发送json串请求controller方法,参数一直为null.是因为没有加@RequestBody.
 
 #### 奇淫巧技
-* 如下,可以获取classpath目录的路径:  
+* !!!666 使用TimeUnit.SECONDS.sleep(x);可以使用秒..暂停线程.
+
+* 在idea的MavenProject窗口选择module，右击选择show dependencies,可以很清楚地查看依赖关系图
+
+* 如下,可以获取classpath目录的路径(该路径为classes下的resources路径):  
 ClassPathResource resource = new ClassPathResource("mock/response/01.json");
 resource.getFile();
 
@@ -699,6 +703,26 @@ java -jar wiremock-standalone-2.11.0.jar --port 8090
         }
     }
 >
+
+
+#### DeferredResult异步对象探究
+* 我自己另外建了个模块：zx-async-controller-test
+* 组件：
+    * controller层方法，接收请求、新建延期返回对象、设置超时方法、任务入队、返回
+    * MockQueue队列，任务入队，处理任务、判断是否超时、放入完成队列
+    * QueueListener完成队列监听器，监听完成队列，获取到完成的数据后，使用延期对象返回
+    * Task任务,三个属性：延期返回对象、任务、是否超时
+* 流程：
+    1. controller层收到请求,消息入队
+    2. 队列监听到消息入队，处理消息
+    3. 如果超时任务触发，将超时状态改为true，并直接返回浏览器任务超时
+    4. 队列处理完任务后，判断是否超时，如果超时，中断任务，否则将任务加入完成队列
+    5. 完成队列监听器监听到消息入队，取出消息，使用延期返回对象返回
+* 附加:
+    * 使用拦截器处理异步请求
+    * 异步请求配置
+    * ResponseBodyEmitter对象短时间内主动向客户端推送消息
+
 
 #### SpringSecurity基本原理
 ![图片](image/1.png)

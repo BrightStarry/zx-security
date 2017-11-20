@@ -1,0 +1,15 @@
+server:
+  port: 80
+spring:
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/zx-security?useUnicode=yes&characterEncode=UTF-8&useSSL=false
+    username: root
+    password: 123456
+  session:
+    store-type: none  #暂时关闭spring-session的配置，不然会报错
+security:
+  basic:
+    enabled: false #暂时关闭spring-security的配置，不然会报错
+logging:
+  level: warn

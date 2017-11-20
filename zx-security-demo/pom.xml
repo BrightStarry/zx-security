@@ -53,8 +53,10 @@
 
     </dependencies>
 
+
     <build>
         <plugins>
+            <!--spring boot专门的打包工具，将所有依赖的jar打到一个jar中直接运行-->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -67,6 +69,7 @@
                 </executions>
             </plugin>
         </plugins>
+        <!--打成jar后的jar名字-->
         <finalName>Demo</finalName>
     </build>
 </project>

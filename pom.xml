@@ -13,6 +13,7 @@
         <module>zx-security-app</module>
         <module>zx-security-browser</module>
         <module>zx-security-demo</module>
+        <module>zx-async-controller-test</module>
     </modules>
 
     <properties>

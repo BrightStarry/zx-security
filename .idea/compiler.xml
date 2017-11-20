@@ -7,6 +7,8 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="zx-async-controller-test" />
+        <module name="zx-aync-controller-test" />
         <module name="zx-security-app" />
         <module name="zx-security-browser" />
         <module name="zx-security-core" />
@@ -14,6 +16,8 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="1.8">
+      <module name="zx-async-controller-test" target="1.8" />
+      <module name="zx-aync-controller-test" target="1.8" />
       <module name="zx-security" target="1.8" />
       <module name="zx-security-app" target="1.8" />
       <module name="zx-security-browser" target="1.8" />
