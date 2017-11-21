@@ -722,10 +722,11 @@ java -jar wiremock-standalone-2.11.0.jar --port 8090
     * 使用拦截器处理异步请求
     * 异步请求配置
     * ResponseBodyEmitter对象短时间内主动向客户端推送消息
-
+* 弄了篇博客:  
+https://zhuanlan.zhihu.com/p/31223106
 
 #### SpringSecurity基本原理
-![图片](image/1.png)
+![图片](image/2.png)
 * 过滤器链
     * 身份验证过滤器(任意一种该过滤器通过后即可),可通过配置决定某一过滤器是否生效(其他过滤器则不行)
         * UsernamePasswordAuthenticationFilter-处理表单登录
@@ -755,3 +756,31 @@ java -jar wiremock-standalone-2.11.0.jar --port 8090
 >
 2. 因为demo模块依赖了browser模块,所以此时再次启动demo模块
 3. 访问任何url,都会进入一个表单验证界面,需要输入帐号密码才可
+
+* 用户信息获取
+    * 重写UserDetailsService接口,从数据库中加载用户信息及权限
+
+* 处理用户逻辑
+    * 在UserDetailsService接口中返回的UserDetails接口对象  
+    有几个校验方法
+        * isAccountNonExpired()是否没有过期
+        * isCredentialsNonExpired()认证(密码)是否过期
+        * isAccountNonLocked()是否没有锁定
+        * isEnabled()是否可用/被删除
+    * 在构造User对象时,可以传入上面这些校验方法的boolean值
+    * 可以自定义实现UserDetails接口
+
+* 处理密码加密解密
+    * 使用PasswordEncoder类(crypto包中的)
+        * encode()加密密码;该方法需要我们在存入密码时调用
+        * match()判断加密后密码是否匹配;security框架自行调用
+    * 在BrowserSecurityConfig类中配置一个bean,返回PasswordEncoder,  
+    使用已有的BCryptPasswordEncoder类,其BCrypt加密比MD5安全,但性能稍低:
+    >
+            @Bean
+            public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+            }
+    >
+    * 该BCryptPasswordEncoder类极其强大,即使是相同密码,每次生成的密文都不相同,  
+    因为每个密文中还携带了不同的盐salt;
