@@ -31,8 +31,12 @@ public class BrowserSecurityConfig extends WebSecurityConfigurerAdapter{
         http
 //                .httpBasic()//最原始的弹出框登录,二选一
                 .formLogin()//表单页面登录,二选一
+                .loginPage("/login")//登录页面url
+                .loginProcessingUrl("/login")//登录方法url
                 .and()
                 .authorizeRequests()//进行验证配置
+                .antMatchers("/login")//匹配这些路径
+                .permitAll()//全部允许
                 .anyRequest()//任何请求
                 .authenticated();//都需验证
 

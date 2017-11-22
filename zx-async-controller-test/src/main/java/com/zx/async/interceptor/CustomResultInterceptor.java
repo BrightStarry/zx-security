@@ -81,6 +81,7 @@ public class CustomResultInterceptor implements DeferredResultProcessingIntercep
          * 所以,这个方法,就是在这个阶段(拦截器的该方法)调用合适,可以更改返回值
          */
         deferredResult.setResultHandler(customResultHandler);
+        deferredResult.setResultHandler(customResultHandler);
 
     }
 
