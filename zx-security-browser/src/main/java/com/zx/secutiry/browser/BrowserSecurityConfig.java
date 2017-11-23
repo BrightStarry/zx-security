@@ -1,5 +1,7 @@
 package com.zx.secutiry.browser;
 
+import com.zx.security.core.properties.SecurityProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,19 +28,26 @@ public class BrowserSecurityConfig extends WebSecurityConfigurerAdapter{
         return new BCryptPasswordEncoder();
     }
 
+    @Autowired
+    private SecurityProperties securityProperties;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
 //                .httpBasic()//最原始的弹出框登录,二选一
                 .formLogin()//表单页面登录,二选一
-                .loginPage("/login")//登录页面url
-                .loginProcessingUrl("/login")//登录方法url
+                .loginPage("/view/login")//登录页面url
+                .loginProcessingUrl("/login")//登录方法url,默认就是/login,用post方法
+
                 .and()
                 .authorizeRequests()//进行验证配置
-                .antMatchers("/login")//匹配这些路径
+
+                .antMatchers("/view/login",securityProperties.getBrowser().getLoginPage())//匹配这些路径
                 .permitAll()//全部允许
+
                 .anyRequest()//任何请求
                 .authenticated();//都需验证
 
+        http.csrf().disable();//暂时关闭csrf,防止跨域请求的防护关闭
     }
 }

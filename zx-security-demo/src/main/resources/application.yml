@@ -9,3 +9,10 @@ spring:
 #security:
 #  basic:
 #    enabled: false #暂时关闭spring-security的配置，不然会报错
+
+
+#zx:
+#  security:
+#    browser:
+#      #配置自定义登录页
+#      loginPage: /login1.html

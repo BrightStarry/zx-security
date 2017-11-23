@@ -784,3 +784,106 @@ https://zhuanlan.zhihu.com/p/31223106
     >
     * 该BCryptPasswordEncoder类极其强大,即使是相同密码,每次生成的密文都不相同,  
     因为每个密文中还携带了不同的盐salt;
+    
+4. BrowserSecurityConfig类配置:
+>
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+            http
+    //                .httpBasic()//最原始的弹出框登录,二选一
+                    .formLogin()//表单页面登录,二选一
+                    .loginPage("/login.html")//登录页面url
+                    .loginProcessingUrl("/login")//登录方法url,默认就是/login,用post方法
+    
+                    .and()
+                    .authorizeRequests()//进行验证配置
+    
+                    .antMatchers("/login.html")//匹配这些路径
+                    .permitAll()//全部允许
+    
+                    .anyRequest()//任何请求
+                    .authenticated();//都需验证
+    
+            http.csrf().disable();//暂时关闭csrf,防止跨域请求的防护关闭
+        }
+>
+
+5. 配置BrowserSecurityController,也就是进入登录页面的方法逻辑:
+>
+       /**
+         * 当访问的页面需要验证时,security会跳转到下面这个接口的登录页面,
+         * 但会把真正要访问的页面,也就是跳转前的页面存到cache中
+         */
+        private RequestCache requestCache = new HttpSessionRequestCache();
+    
+        /**
+         * 重定向策略,用于跳转请求
+         */
+        private RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+    
+        @Autowired
+        private SecurityProperties securityProperties;
+    
+        /**
+         * 当需要身份认证时,跳转到这里
+         *
+         * 其需求是.如果之前访问的url不是页面,就返回异常信息;如果是页面,就跳转到登录页;
+         * 此处是用访问的后缀是不是.html结尾来判断的,
+         * 我觉得比较好的是,根据请求头的context-type来判断.
+         * 就是这个:
+         *  @RequestMapping(
+         *       produces = {"text/html"}
+         *   )
+         * @param request
+         * @return
+         */
+        @RequestMapping("/view/login")
+        @ResponseStatus(code = HttpStatus.UNAUTHORIZED)//返回401,未授权状态码
+        public SimpleResponse requiredAuthentication(HttpServletRequest request, HttpServletResponse response) throws IOException {
+            //获取到跳转前的请求
+            SavedRequest savedRequest = requestCache.getRequest(request, response);
+    
+            //如果请求不为空
+            if (savedRequest != null) {
+                //获取到请求url
+                String target = savedRequest.getRedirectUrl();
+                log.info("引发跳转的请求是:{}", target);
+                //如果该请求是.html结尾的,跳转到登录页,否则表示不是请求的页面,返回json
+                if (StringUtils.endsWithIgnoreCase(target, ".html")) {
+                    //跳转到登录页,从yml配置中读取登录页路径
+                    redirectStrategy.sendRedirect(request,response,securityProperties.getBrowser().getLoginPage());
+                }
+            }
+            return new SimpleResponse("访问的服务需要身份认证,请引导用户到登录页");
+        }
+>
+
+6. 在core模块中添加配置属性bean-SecurityProperties,其中包括了BrowserProperties
+>
+    @Data
+    @ConfigurationProperties(prefix = "zx.security")
+    public class SecurityProperties {
+        private BrowserProperties browser = new BrowserProperties();
+    }
+    
+    @Data
+    public class BrowserProperties {
+            //登录页配置-默认值
+            private String loginPage = "/login.html";
+    }
+>
+这样,配置在demo模块的yml中的如下就会被读取到SecurityProperties类的browser中的loginPage中
+>
+    zx:
+      security:
+        browser:
+          loginPage: /login1.html
+>
+然后再配置一个(我他妈从来没配置过?????!!!!),让上面的属性读取类生效
+(然后将这个loginPage属性注入到BrowserSecurityController还有BrowserSecurityConfig中去)
+>
+    @Configuration
+    @EnableConfigurationProperties(SecurityProperties.class)
+    public class SecurityCoreConfig {
+    }
+>
