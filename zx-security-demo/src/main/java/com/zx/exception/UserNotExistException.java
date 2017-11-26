@@ -1,6 +1,7 @@
 package com.zx.exception;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * author:ZhengXing
@@ -8,6 +9,7 @@ import lombok.Data;
  * 自定义异常
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class UserNotExistException extends RuntimeException {
     private String id;
 

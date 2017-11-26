@@ -9,6 +9,10 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,6 +33,24 @@ public class UserController {
     @DeleteMapping("/{id:\\d+}")
     public void delete(@PathVariable String id) {
         System.out.println(id);
+    }
+
+
+    /**
+     * 获取用户信息
+     */
+    @GetMapping("/me")
+    public Object getCurrentUser(@AuthenticationPrincipal UserDetails user) {
+        //一种方法是自己获取
+        //SecurityContextHolder.getContext().getAuthentication()
+
+        //第二种方式
+        //直接在方法参数中写Authentication,即可获取
+
+        //第三种,只想获取Authentication中的UserDetails
+        //在方法参数中这么写@AuthenticationPrincipal UserDetails user
+
+        return user;
     }
 
     /**

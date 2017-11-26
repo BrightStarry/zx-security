@@ -1,5 +1,23 @@
 #### Spring Security 
 
+#### 关于设计模式在项目开发中运用的感想
+        关于设计模式,我曾经照着一篇博客,敲打过几乎常用的所有设计模式.然后在项目中真正运用得并不多.
+    我还记得那个博主写的一句话,最常用的是模版方法模式.我并无他想.
+        直到前些天,我开发公司的一个短信发送平台时,因为需要接入多个短信发送渠道,并且以后需要能扩展渠
+    道(这周就在新加一个渠道.移动的CMPP协议,贼难受).我就一直尽量在编写代码时将其设计的比较抽象,并尽
+    可能地消除了一些后期可能需要改动的if语句;例如使用表驱动(类似一个数组或map,使用索引或key选择实现
+    类)这样子的;
+        刚开始时,我并没有使用其他设计模式的想法.在我按部就班地写完第一个渠道的发送方法(无非就是获取
+    发送参数,封装成请求参数,发送,处理同步返回值等(当然该系统还有其他比较繁琐的逻辑)),突然就顿悟了,
+    稍稍重构了下代码,将其重构成了模版方法.顿时后面的代码都十分简单了.然后在异步回调,短信上行的处理中
+    ,我全部使用了模版方法.终于体会到他的强大.简单而强大.
+        此外,近来我也细细想过.对于一个并无扩展需求的业务系统来说,设计模式或者说抽象的编程真的没什么
+    必要.就拿目前简直是行业规范的service层接口来说把,哪个业务系统会需要把整个service层的实现全部替
+    换了.将其抽象出接口来,简直就是给开发找麻烦.
+        以我目前的理解,设计模式最好的运用场合是在写轮子的时候.将应用的逻辑进行分层,将有自定义需求的
+    所有逻辑抽象出来,方便以后自定义的扩展才是正解.   
+
+
 #### bug记录
 * 如果出现idea父模块无法导入子模块，可以在设置里面搜索maven，找到忽略的文件，去掉该子模块的勾选即可。
 * 如果导入后，发现还是未解决问题，可以打开idea的maven project，选中该项目，刷新即可
@@ -8,7 +26,54 @@
 * !!!之前遇到HttpClient发送json串请求controller方法,参数一直为null.是因为没有加@RequestBody.
 
 #### 奇淫巧技
-* !!!666 使用TimeUnit.SECONDS.sleep(x);可以使用秒..暂停线程.
+* ServletWebRequest类,可以封装request和response.
+
+* 如下写法,可以将spring容器中所有该类型的bean都放入map中,并以每个bean各自的name为key:  
+>
+    @Auwired
+    private Map<String,User> userMap;
+>
+
+* 如下写法,可以用来自定义配置bean:  
+写轮子的时候用,如果调用者没有配置自己的bean,才使用轮子默认的bean,除了name外,还可以使用type等
+>
+    //该注解表示将在该类中使用@Bean配置bean,相当于用java代码写原先的spring.xml中的beans标签配置bean
+    @Configuration
+    public class CaptchaBeanConfig {
+        @Autowired
+        private SecurityProperties securityProperties;
+        //当spring在容器中无法找到名字为imageCaptchaGenerator的bean的时候,才使用该方法生成bean
+        @Bean
+        @ConditionalOnMissingBean(name = "imageCaptchaGenerator")
+        public CaptchaGenerator imageCaptchaGenerator() {
+            //创建默认的图片验证码生成器
+            BasicImageCaptchaGenerator imageCaptchaGenerator = new BasicImageCaptchaGenerator();
+            imageCaptchaGenerator.setSecurityProperties(securityProperties);
+            return imageCaptchaGenerator;
+        }
+    }
+>
+
+* 实现InitializingBean,并重写方法,可以在所有bean初始化完毕时,执行某些操作
+
+* ServletRequestUtils工具.如下方法可以从request获取指定类型的指定key的参数值,如果取不到就用默认值:
+>
+    ServletRequestUtils.getIntParameter(
+                    request.getRequest(),
+                    "width",
+                    securityProperties.getCaptcha().getImage().getWidth());
+>
+
+* 在resources目录中,新建resources目录.并写一个index.html.可以访问url/index.html直接访问到
+
+* ObjectMapper : springMVC在启动时自动注册的bean,用于将对象转为json,可以直接注入到代码中
+
+* ctrl + h ,类的继承图;
+
+* 使用MediaType(spring的),几乎有所有常用的http请求的contentType属性的值的常量:  
+例如MediaType.APPLICATION_JSON_UTF8_VALUE
+
+* 使用TimeUnit.SECONDS.sleep(x);可以使用秒..暂停线程.
 
 * 在idea的MavenProject窗口选择module，右击选择show dependencies,可以很清楚地查看依赖关系图
 
@@ -887,3 +952,269 @@ https://zhuanlan.zhihu.com/p/31223106
     public class SecurityCoreConfig {
     }
 >
+
+7. 修改登录成功后的处理方式:
+自定义身份验证成功处理类
+>
+    /**
+     * author:ZhengXing
+     * datetime:2017-11-24 20:40
+     * 自定义身份验证成功处理器
+     * security默认在验证成功后跳转到此前访问的页面,但是如果前端的登录是
+     * ajax方式的,不适合跳转页面,所以需要更改成功后的处理
+     */
+    @Component("customAuthenticationSuccessHandler")
+    @Slf4j
+    public class CustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler{
+        /**
+         * springMVC在启动时自动注册的bean,用于将对象转为json
+         */
+        @Autowired
+        private ObjectMapper objectMapper;
+        /**
+         * 当登陆成功时
+         * @param request
+         * @param response
+         * @param authentication 封装了认证信息
+         */
+        @Override
+        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+            log.info("登录成功");
+            response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+            //将authentication对象转为jsonString,返回
+            response.getWriter().write(objectMapper.writeValueAsString(authentication));
+        }
+    }
+>
+在BrowserSecurityConfig配置处理类:
+>
+    .successHandler(customAuthenticationSuccessHandler)//配置验证成功处理器
+>
+如下是handler的方法中的authentication对象的一些属性:
+>
+    {
+    authorities: [
+    {
+    authority: "admin"   
+    }
+    ],
+    details: {
+    remoteAddress: "127.0.0.1",
+    sessionId: "24AC42B2747541800EB5C4744AF2CEF0"
+    },
+    authenticated: true,
+    principal: {
+    password: null,
+    username: "aaa",
+    authorities: [
+    {
+    authority: "admin"
+    }
+    ],
+    accountNonExpired: true,
+    accountNonLocked: true,
+    credentialsNonExpired: true,
+    enabled: true
+    },
+    credentials: null,
+    name: "aaa"
+    }
+>
+
+8. 修改登录失败后的处理方式:
+自定义处理器:
+>
+    /**
+     * author:ZhengXing
+     * datetime:2017-11-24 21:03
+     * 自定义身份验证失败处理器
+     */
+    @Component("customAuthenticationFailHandler")
+    @Slf4j
+    public class CustomAuthenticationFailHandler implements AuthenticationFailureHandler {
+    
+        @Autowired
+        private ObjectMapper objectMapper;
+    
+        /**
+         * 在异常中,有错误消息,是关于为什么登录失败的
+         * 
+         * 默认登录失败是跳转到一个登录失败的url,此处改了处理方式
+         */
+        @Override
+        public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException, ServletException {
+            log.info("登录失败");
+            //状态码500
+            response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
+            response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+            //将authentication对象转为jsonString,返回
+            response.getWriter().write(objectMapper.writeValueAsString(e));
+        }
+>
+配置处理器:
+>
+    .failureHandler(customAuthenticationFailHandler)//配置验证失败处理器
+>
+在处理器的异常中,有对应的失败消息
+
+9. 将使用默认的重定向还是使用自定义的json返回处理方式加入配置属性,可自定义配置  
+增加登录类型枚举,并在BrowserProperties属性类中增加对应属性:
+>
+    public enum LoginType {
+        //重定向
+        REDIRECT,
+        //返回json
+        JSON,
+        ;
+    }
+>
+然后在成功和失败处理器中,都将原来的实现成功失败处理接口,改为继承security默认的处理器实现类,然后重写对应方法:  
+根据类型选择自定义实现还是使用父类默认的方法
+>
+    //如果配置的的登录方式是json,使用自定义处理器
+            if(LoginType.JSON.equals(securityProperties.getBrowser().getLoginType())){
+                response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+                //将authentication对象转为jsonString,返回
+                response.getWriter().write(objectMapper.writeValueAsString(authentication));
+            }else{
+                //否则使用父类处理方法,重定向
+                super.onAuthenticationSuccess(request,response,authentication);
+            }
+>
+如下配置即可:
+>
+    zx:
+      security:
+        browser:
+          #配置登录方式
+          loginType: REDIRECT
+>
+
+#### 认证流程源码级详解
+* 点击登录,进入UsernamePasswordAuthenticationFilter类
+* 在该类的attemptAuthentication()方法中获取到请求的用户名密码
+* 用用户名密码构建了UsernamePasswordAuthenticationToken对象
+* 该对象是Authentication接口的实现.
+* ...下次有时间自己看吧
+* 对于如何在多个对象间共享用户认证信息,用的是SecurityContextHolder,  
+其本质还是ThreadLocal
+
+#### 在Controller中获取登录用户的信息
+>
+        /**
+         * 获取用户信息
+         */
+        @GetMapping("/me")
+        public Object getCurrentUser(@AuthenticationPrincipal UserDetails user) {
+            //一种方法是自己获取
+            //SecurityContextHolder.getContext().getAuthentication()
+    
+            //第二种方式
+            //直接在方法参数中写Authentication,即可获取
+    
+            //第三种,只想获取Authentication中的UserDetails
+            //在方法参数中这么写@AuthenticationPrincipal UserDetails user
+    
+            return user;
+        }
+>
+
+#### 图形验证码
+* 新建Captcha类,保存验证码的图片流/code/过期时间
+* 完成captchaController,生成图片并返回
+* 在securityConfig配置类中,允许未登录便访问获取验证码的路径
+* 自定义CaptchaFilter过滤器,并将其加入security配置中
+
+* 重构
+* 将验证码的大小/字符数/需要验证的url/生成方法都变成可配置的
+
+#### Remember记住我功能
+* 基本原理
+    * 在UsernamePasswordAuthenticationFilter认证成功后,  
+    调用RememberService的TokenRepository,将token生成并写入cookie和数据库
+    * 用户下次访问时,访问到RememberMeAuthenticationFilter,  
+    读取到cookie中的token,从数据库中查询到对应token的用户名,  
+    然后使用UserDetailsService找到用户信息,完成登录验证
+
+* 在登录页面中增加记住我的选择,使用remember-me为name:  
+<input type="checkbox" name="remember-me" value="true">
+
+* 在BrowserSecurityConfig类中如下配置:  
+Bean:
+>
+        @Autowired
+        private DataSource dataSource;
+        //记住我功能的配置,需要注入
+        @Autowired
+        private UserDetailsService customUserDetailsService;
+        /**
+         * 记住我功能
+         * 生成用来将token写入数据库的PersistentTokenRepository类
+         */
+        @Bean
+        public PersistentTokenRepository persistentTokenRepository() {
+            JdbcTokenRepositoryImpl tokenRepository = new JdbcTokenRepositoryImpl();
+            tokenRepository.setDataSource(dataSource);
+            //设置在启动时,创建对应的数据库中存储token的表
+            tokenRepository.setCreateTableOnStartup(true);
+            return tokenRepository;
+        }
+>
+配置:
+>
+    .and()
+       .rememberMe()//配置记住我功能
+           //token仓库配置,用来将token存入数据库
+           .tokenRepository(persistentTokenRepository())
+           //token过期秒数配置
+           .tokenValiditySeconds(securityProperties.getBrowser().getRememberMeSeconds())
+           //查询用户信息的service
+           .userDetailsService(customUserDetailsService)
+>
+
+* 启动后,会自动在数据库中创建persistent_logins表
+
+* 然后登录,此时,该表中会多一条记录,保存了该用户的用户名/session/token/最后登陆时间;  
+然后我们关闭程序,重新启动程序,此时,之前登录的session应该无效了;  
+直接访问需要验证的url,会发现已经无需登录了
+
+#### 短信验证码登录-security框架外的东西(core-com.zx.security.validate)
+* 完成除security框架外的代码后,目前是这个架构:
+    * 在controller中有两个方法,分别实现图形/短信验证码
+    * 有图形/短信验证码生成器接口和两个实现类
+    * 图形验证码需要用流输出回去,短信验证码需要调用短信验证码发送器接口的方法.
+* 可使用模版方法重构为如下逻辑(我真的懒得重构了(...最终还是重构了,难受))
+    * controller中只有一个方法,使用url传参,得到验证码类型是短信还是图形
+    * 定义了一个验证码处理接口和验证码处理接口抽象类
+    * 实现了 生成验证码 -> 存储验证码 -> 发送验证码/返回图片流 整个的模版方法,每一步不同的划分为各自的抽象方法
+    * 两个实现抽象类的实现类,分别完成各自不同的方法就可以了,
+        * 图片验证码返回流
+        * 短信验证码发送短信
+
+* 短信验证码流程
+![图片](image/3.png)
+
+#### 短信验证码登录-扩展security框架(core-com.zx.security.authentication.mobile)
+* 实现自己的SmsCaptchaAuthenticationToken类(Authentication的子类):  
+用于在未认证通过时存放手机号,通过时,存放用户信息
+
+* 实现SmsCaptchaAuthenticationFilter类,  
+用于从请求中获取手机号,其他关于请求的详细信息,将其存入SmsCaptchaAuthenticationToken等
+
+* 实现SmsCaptchaAuthenticationProvider类,  
+使用userDetailsService.loadUserByUsername验证其身份,设定自己这个Provider支持哪些Authentication,  
+如果身份验证通过了,将其用户信息和之前的详细信息,存到新的SmsCaptchaAuthenticationToken中,返回
+
+* 实现SmsCaptchaFilter过滤器,来在最开始验证短信验证码是否正确,基本就复制图形验证码的过滤器,稍微改下即可
+
+* 在core中新建SmsCaptchaAuthenticationSecurityConfig,配置上面的实现类;  
+并在BrowserSecurityConfig中,同样配置SmsCaptchaFilter;  
+并在BrowserSecurityConfig中如下配置:
+>
+    .and()
+        .apply(smsCaptchaAuthenticationSecurityConfig);
+>
+
+* 全部实现后,可重构的包括两个类似的验证码过滤器,需要相同引用的变量抽成常量,  
+将security配置类分为app配置/web配置/验证码配置等各个类,放到各自模块..  
+这些我是真的懒得打了... 

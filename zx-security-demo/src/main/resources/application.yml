@@ -11,8 +11,13 @@ spring:
 #    enabled: false #暂时关闭spring-security的配置，不然会报错
 
 
-#zx:
-#  security:
-#    browser:
-#      #配置自定义登录页
+zx:
+  security:
+    browser:
+      #配置登录方式
+      loginType: JSON
+    captcha:
+      image:
+        length: 4
+      #配置自定义登录页
 #      loginPage: /login1.html

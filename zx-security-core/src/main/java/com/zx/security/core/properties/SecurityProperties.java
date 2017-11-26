@@ -11,5 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties(prefix = "zx.security")
 public class SecurityProperties {
+    //浏览器端配置
     private BrowserProperties browser = new BrowserProperties();
+    //验证码相关配置
+    private CaptchaProperties captcha = new CaptchaProperties();
 }

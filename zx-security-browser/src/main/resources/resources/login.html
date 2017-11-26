@@ -5,10 +5,31 @@
     <title>Title</title>
 </head>
 <body>
+<h1>表单登录</h1>
 <form method="post" action="/login">
     帐号:<input type="text" name="username"/>
     <br/>
     密码:<input type="password" name="password"/>
+    <br/>
+    <img src="/captcha/image">
+    <br/>
+    验证码:<input type="text" name="captcha">
+    <br/>
+    <input type="checkbox" name="remember-me" value="true">记住我
+    <br/>
+    <button type="submit">登录</button>
+</form>
+
+<h1>手机登录</h1>
+<form method="post" action="/login/phone">
+    手机号:<input type="text" name="phone" value="17826824998"/>
+    <br/>
+    <a href="/captcha/sms?phone=17826824998">发送验证码</a>
+    <br/>
+    验证码:<input type="text" name="smsCaptcha">
+    <br/>
+    <input type="checkbox" name="remember-me" value="true">记住我
+    <br/>
     <button type="submit">登录</button>
 </form>
 </body>
