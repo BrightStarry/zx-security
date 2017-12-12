@@ -1119,6 +1119,79 @@ https://zhuanlan.zhihu.com/p/31223106
         }
 >
 
+#### 从session中获取用户信息
+* 存储在session中的SPRING_SECURITY_CONTEXT 这个key中.
+* Session.SPRING_SECURITY_CONTEXT.authentication.principal.username
+
+#### 扩展UserDetails
+* 实现如下类,然后在自定义的UserDetailService中新建该类即可
+* 注意,在获取时可以使用 @AuthenticationPrincipal CustomUser user, 在方法上直接使用自定义的类来接收
+>
+    /**
+     * author:ZhengXing
+     * datetime:2017/12/12 0012 12:08
+     * 自定义用户类
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public class CustomUser implements UserDetails {
+    
+    	private Long id;
+    
+    	private String username;
+    
+    	private String password;
+    
+    	private Boolean enabled;
+    
+    	private Collection<? extends GrantedAuthority> authorities;
+    
+    	public CustomUser(Long id, String username, String password, Boolean enabled) {
+    		this.id = id;
+    		this.username = username;
+    		this.password = password;
+    		this.enabled = enabled;
+    	}
+    
+    	@Override
+    	public Collection<? extends GrantedAuthority> getAuthorities() {
+    		return null;
+    	}
+    
+    	@Override
+    	public String getPassword() {
+    		return password;
+    	}
+    
+    	@Override
+    	public String getUsername() {
+    		return username;
+    	}
+    
+    	@Override
+    	public boolean isAccountNonExpired() {
+    		return true;
+    	}
+    
+    	@Override
+    	public boolean isAccountNonLocked() {
+    		return true;
+    	}
+    
+    	@Override
+    	public boolean isCredentialsNonExpired() {
+    		return true;
+    	}
+    
+    	@Override
+    	public boolean isEnabled() {
+    		return enabled;
+    	}
+    }
+>
+
+
 #### 图形验证码
 * 新建Captcha类,保存验证码的图片流/code/过期时间
 * 完成captchaController,生成图片并返回

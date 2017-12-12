@@ -54,9 +54,5 @@ public class CustomAuthenticationSuccessHandler extends SavedRequestAwareAuthent
             //否则使用父类处理方法,重定向
             super.onAuthenticationSuccess(request,response,authentication);
         }
-
-
-
-
     }
 }
