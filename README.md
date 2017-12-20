@@ -24,8 +24,13 @@
 * SpringMVC中RequestMapping("/")这个/不能乱加,如果controller类已经有/user这样一个前缀,  
 那么如果在方法上在注解上"/",访问的路径就会为/user/,使用/user将无法访问
 * !!!之前遇到HttpClient发送json串请求controller方法,参数一直为null.是因为没有加@RequestBody.
+* !!!spring boot 属性注入 @ConfigurationProperties 必须有getter/setter方法才能生效 血泪教训
 
 #### 奇淫巧技
+
+
+* PasswordEncoder类,可以直接用来加密解密
+
 * ServletWebRequest类,可以封装request和response.
 
 * 如下写法,可以将spring容器中所有该类型的bean都放入map中,并以每个bean各自的name为key:  
