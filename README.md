@@ -1296,3 +1296,55 @@ Bean:
 * 全部实现后,可重构的包括两个类似的验证码过滤器,需要相同引用的变量抽成常量,  
 将security配置类分为app配置/web配置/验证码配置等各个类,放到各自模块..  
 这些我是真的懒得打了... 
+
+
+
+#### OAuth2协议
+* 角色
+    * client: 第三方服务
+    * Resource Owner: 资源所有者,也就是用户
+    * Provider: 服务提供商-例如QQ这样我们需要他的用户信息的提供商
+        * Authorization: 认证服务器,用来获取token
+        * Resource Server: 资源服务器,用token来获取client授权了的资源
+* 普通流程
+![普通流程](image/4.png)
+
+* OAuth协议中的授权模式
+    * 授权码模式
+    * 密码模式
+    * 客户端模式
+    * 简化模式
+    
+* 授权码模式
+![授权码模式](image/5.png)
+与其他模式的区别在于,  
+其他模式同意授权的动作是在第三方应用上完成的,该模式在认证服务器上完成;    
+用户同意授权后,该模式中认证服务器返回第三方的是一个授权码,而不是直接返回令牌.
+
+#### Spring Social
+* 其基本原理就是在最后一步,用户通过token获取到用户信息后,  
+    在SpringSecurity中,将用户信息构建成Authentication,并放入Security,也就相当于登录成功了.  
+
+* Social框架将这么一个流程封装到了一个SocialAuthenticationFilter过滤器中,  
+    然后将该过滤器加到了SpringSecurity的过滤器链中.
+
+* ServiceProvider(AbstractOAuth2ServiceProvider):服务提供商的抽象,
+针对不同的服务提供商,例如QQ/微信,需要继承并实现不同的类
+
+* OAuth2Operations(OAuth2Template):操作接口,封装了OAuth2协议,从用户授权到获取令牌的所有流程
+
+* Api(AbstractOAuth2ApiBinding):自行实现的接口,根据服务提供商提供获取用户信息这也样一个行为
+
+* Connection(OAuth2Connection):封装获取到的用户信息
+
+* ConnectionFactory(OAuth2ConnectionFactory):创建Connection实例,也就是在这个工厂中,为了创建  
+    Connection,包含了ServiceProvider,包括上面这些步骤,都是通过该类调用,知道最后一步获取到用户信息,  
+    然后该类创建Connection.
+* ApiAdapter:在Api和Connection之间做一个适配,将每个服务提供商提供的不同的用户信息适配
+
+* DBUserConnection:Social提供的一张数据库表,存储了自己系统里的普通用户和服务提供商获取的用户的一个  
+    对应关系.由此,可以在第三方登录的时候,知道是哪个本地用户登录了
+
+* UserConnectionRepository(JdbcUsersConnectionRepository):用来操作DBUserConnection表
+
+ 

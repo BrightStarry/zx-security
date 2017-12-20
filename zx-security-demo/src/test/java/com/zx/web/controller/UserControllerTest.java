@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
@@ -25,19 +26,21 @@ import java.util.Date;
  */
 @SpringBootTest
 @RunWith(SpringRunner.class)
+@AutoConfigureMockMvc
 public class UserControllerTest {
     //spring的web容器
-    @Autowired
-    private WebApplicationContext wac;
+
+//    private WebApplicationContext wac;
 
     //mvc模拟类
+    @Autowired
     private MockMvc mockMvc;
 
-    //使用容器构建mvc模拟类
-    @Before
-    public void setup() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-    }
+//    //使用容器构建mvc模拟类
+//    @Before
+//    public void setup() {
+//        mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+//    }
 
     //文件上传
     @Test
