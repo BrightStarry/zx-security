@@ -15,4 +15,6 @@ public class SecurityProperties {
     private BrowserProperties browser = new BrowserProperties();
     //验证码相关配置
     private CaptchaProperties captcha = new CaptchaProperties();
+    //social相关配置
+    private SocialProperties social = new SocialProperties();
 }

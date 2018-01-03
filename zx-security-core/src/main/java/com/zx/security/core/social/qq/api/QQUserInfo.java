@@ -1,6 +1,7 @@
 package com.zx.security.core.social.qq.api;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * author:ZhengXing
@@ -11,7 +12,10 @@ import lombok.Data;
  * 使用IDEA的多行编辑,..几秒搞定.舒服
  */
 @Data
+@Accessors(chain = true)
 public class QQUserInfo {
+
+    private String openId;//用户id 不是返回来的,需要自行添加
 
     private String ret;//返回码
     private String msg;//如果ret<0，会有相应的错误信息提示，返回数据全部用UTF-8编码。

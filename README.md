@@ -28,7 +28,8 @@
 * !!!spring boot 属性注入 @ConfigurationProperties 必须有getter/setter方法才能生效 血泪教训
 
 #### 奇淫巧技
-
+* 如下代码表示当配置了该属性时,该bean才注入
+> @ConditionalOnProperty(value = "zx.security.social.qq",name = "appId")
 
 * PasswordEncoder类,可以直接用来加密解密
 
@@ -867,7 +868,8 @@ Bean:
 * DBUserConnection:Social提供的一张数据库表,存储了自己系统里的普通用户和服务提供商获取的用户的一个  
     对应关系.由此,可以在第三方登录的时候,知道是哪个本地用户登录了
 
-* UserConnectionRepository(JdbcUsersConnectionRepository):用来操作DBUserConnection表
+* UserConnectionRepository(JdbcUsersConnectionRepository):用来操作DBUserConnection表,
+    将第三方登陆用户和自己的业务用户联系起来
 
 
 #### 再次整理下上面的逻辑
@@ -910,5 +912,80 @@ Bean:
     实现了其创建QQImpl的抽象方法和 注入 OAuth2Operations(OAuth2Template)的构造方法.
     
     具体见该类注释
+>
+
+* ApiAdapter:在每个服务提供商的用户信息和spring social的标准信息之间做一个适配,将每个服务提供商提供的不同的用户信息适配
+>
+    定义QQAdapter类,实现ApiAdpater<QQ>接口.
+    完成从每个运营商的不同的用户信息中,获取出用户id/昵称/头像/主页信息的适配方法
+    等其他方法.
+>
+
+* ConnectionFactory(OAuth2ConnectionFactory):Connection实例工厂
+>
+    需要有ApiAdapter 和 ServiceProvider.
+    实现其构造函数即可
+>
+
+* UserConnectionRepository(JdbcUsersConnectionRepository):用来操作DBUserConnection表,将第三方登陆用户和自己的业务用户联系起来
+>
+    定义了social的配置类,并继承了SocialConfigurerAdapter类,实现getUsersConnectionRepository方法即可
+    此时还需要创建对应的表,对应的sql在JdbcUsersConnectionRepository类的同级目录下(JdbcUsersConnectionRepository.sql)
+    需要手动创建.如果需要给表名加前缀.可以在创建JdbcUsersConnectionRepository该类后,setTablePrefix.
+    
+    该表的一些字段
+    用户id(自己业务系统中)/服务提供商的id/服务提供商的用户id  这个字段存储了业务系统中的用户和第三方登录用户的对应关系
+    还有ApiAdapter适配器中设置的值.包括用户名/用户主页.用户头像等
+>
+
+* SocialUserDetailsService:根据用户id(自己业务系统的)加载对应的用户信息返回
+>
+    直接让之前的CustomUserDetailsService类,再实现SocialUserDetailsService接口即可.
+    再将该类从browser模块移动到demo模块.因为该类需要根据业务表自行实现.
+>
+
+* 添加qq登录所需的配置属性
+>
+    定义QQProperties extends SocialProperties(该类就需要appId和appSecert).
+    然后只需再增加一个providerId(服务提供商唯一标识即可)
+    然后在定义一个SocialProperties,将QQProperties作为属性.
+    再将SocialProperties作为属性放入SecurityProperties作为属性.
+        
+    再实现qq配置自动注入类.
+    @Configuration
+    @ConditionalOnProperty(prefix = "zx.security.social.qq",name = "appId")
+    public class QQAutoConfig extends SocialAutoConfigurerAdapter{
+        @Autowired
+        private SecurityProperties securityProperties;
+    
+        @Override
+        protected ConnectionFactory<?> createConnectionFactory() {
+            QQProperties qq = securityProperties.getSocial().getQq();
+            return new QQConnectionFactory(qq.getProviderId(),qq.getAppId(),qq.getAppSecret());
+        }
+        
+    }    
+    
+    再在SocialConfig中配置
+    /**
+     * 返回配置类
+     */
+    @Bean
+    public SpringSocialConfigurer zxSocialSecurityConfig() {
+        return new SpringSocialConfigurer();
+    }
+    然后将其加入security的配置链中,就会在security当然过滤器链中加入social的过滤器
+    http.apply(zxSocialSecurityConfig).and()
+ 
+>
+
+* 然后在页面上配置
+>
+    <h1>社交登录</h1>
+    <a href="/auth/qq">QQ登录</a>
+    
+    注意,所有/auth请求.都会被SocialAuthenticationFilter拦截
+    然后第二段/qq就是providerId.也就是每个服务提供商的唯一标识
+    这样.点击这个链接.就会进入qq登录
 >
  

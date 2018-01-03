@@ -72,11 +72,15 @@ public class QQImpl extends AbstractOAuth2ApiBinding implements QQ {
     }
 
     @Override
-    public QQUserInfo getUserInfo() throws Exception {
+    public QQUserInfo getUserInfo(){
         //发起请求,获取用户信息,还一个参数accessToken交由父类的token策略自行处理
         String url = String.format(URL_GET_USERINFO, appId, openId);
         String result = getRestTemplate().getForObject(url, String.class);
-        //json转换
-        return objectMapper.readValue(result, QQUserInfo.class);
+        //json转换,并附上openId
+        try {
+            return objectMapper.readValue(result, QQUserInfo.class).setOpenId(openId);
+        } catch (IOException e) {
+            throw new RuntimeException("获取用户信息失败", e);
+        }
     }
 }

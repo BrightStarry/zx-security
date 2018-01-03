@@ -21,4 +21,9 @@ zx:
       image:
         length: 4
       #配置自定义登录页
-#      loginPage: /login1.html
+#      loginPage: /login.html
+    social:
+      qq:
+        appId: wxd99431bbff8305a0
+        appSecret: 60f78681d063590a469f1b297feff3c4
+        providerId: qq

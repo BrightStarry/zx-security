@@ -9,5 +9,5 @@ import java.io.IOException;
  */
 public interface QQ {
 
-    QQUserInfo getUserInfo() throws Exception;
+    QQUserInfo getUserInfo();
 }

@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.social.security.SpringSocialConfigurer;
 
 import javax.sql.DataSource;
 
@@ -54,6 +55,11 @@ public class BrowserSecurityConfig extends WebSecurityConfigurerAdapter{
     //短信验证码的配置类
     @Autowired
     private SmsCaptchaAuthenticationSecurityConfig smsCaptchaAuthenticationSecurityConfig;
+
+    //springSocial配置类
+    @Autowired
+    private SpringSocialConfigurer zxSocialSecurityConfig;
+
     /**
      * 记住我功能
      * 生成用来将token写入数据库的PersistentTokenRepository类
@@ -84,7 +90,7 @@ public class BrowserSecurityConfig extends WebSecurityConfigurerAdapter{
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http
+        http.apply(zxSocialSecurityConfig).and()
                 //在UsernamePasswordAuthenticationFilter过滤器之前,增加上验证码过滤器
                 .addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(smsCaptchaFilter, UsernamePasswordAuthenticationFilter.class)
