@@ -28,6 +28,8 @@
 * !!!spring boot 属性注入 @ConfigurationProperties 必须有getter/setter方法才能生效 血泪教训
 
 #### 奇淫巧技
+* StringUtils.substringBetween()  截取字符串中,被哪两个首位字符包裹的字符串
+
 * 如下代码表示当配置了该属性时,该bean才注入
 > @ConditionalOnProperty(value = "zx.security.social.qq",name = "appId")
 
@@ -904,7 +906,7 @@ Bean:
 >
 
 * OAuth2Operations(OAuth2Template):操作接口,封装了OAuth2协议,从用户授权到获取令牌的所有流程;  
-该类暂时使用spring social 的默认实现.
+该类暂时使用spring social 的默认实现.(补充,目前自定义了.修改了用授权码换取到token并返回解析的一些方法)
 
 * ServiceProvider(AbstractOAuth2ServiceProvider):服务提供商的抽象.
 >
@@ -968,14 +970,16 @@ Bean:
     
     再在SocialConfig中配置
     /**
-     * 返回配置类
-     */
-    @Bean
-    public SpringSocialConfigurer zxSocialSecurityConfig() {
-        return new SpringSocialConfigurer();
-    }
-    然后将其加入security的配置链中,就会在security当然过滤器链中加入social的过滤器
-    http.apply(zxSocialSecurityConfig).and()
+         * 将SpringSocial配置类加入spring Bean,以用来注入SpringSecurity配置类
+         * 之所以直接返回,只因为该类中已经有了默认的一些配置,
+         * 例如将SocialAuthenticationFilter过滤器加入过滤器链等
+         */
+        @Bean
+        public SpringSocialConfigurer zxSocialSecurityConfig() {
+            return new SpringSocialConfigurer();
+        }
+     然后将其加入security的配置链中,就会在security当然过滤器链中加入social的过滤器
+     http.apply(zxSocialSecurityConfig).and()
  
 >
 
@@ -988,4 +992,50 @@ Bean:
     然后第二段/qq就是providerId.也就是每个服务提供商的唯一标识
     这样.点击这个链接.就会进入qq登录
 >
+
+* 用户自行登录成功后,spring social默认的回调地址还是/quth/qq  
+如果需要修改回调地址.可以选择
+>
+    以下是为了适配课程中的 /qqLogin/callback.do 这么一个回调地址
+    
+    自定义了一个CustomSpringSocialConfigurer类,继承了SpringSocialConfigurer,
+    重写了获取过滤器的方法,在该方法中,照样调用父类的实现,然后在返回结果,也就是该过滤器后,
+    修改了它要处理的url值.
+    然后在上面返回SpringSocialConfigurer Bean的时候,返回自己定义的这个类,
+    并且需要在构造参数中注入自定义的url.
+    
+    然后上面引导用户跳转到qq登录的url地址,也需要改成我们自己自定义的url
+    然后还要修改url的后缀,也就是/callback.do这段.只需要把providerId改成对应的值即可.
+>
+
+* 此处.因为课程中的qq帐号的完整回调地址是http://www.pinzhi365.com/qqLogin/callback.do  
+为了,测试,还需要在hosts中将该主机名指向127.0.0.1,然后访问的时候.  
+也需要用www.pinzhi365.com替代127.0.0.1  
+这样子是为了.让spring social传递给qq的回调地址的主机名,也变成www.pinzhi365.com
  
+* 然后,登录完成后.qq回调回来.可以在之前的过滤器中看到日志
+> 引发跳转的请求是:http://www.pinzhi365.com/signin
+
+* 整个social大致的处理流程如下
+![](image/7.png)
+>
+    一个过滤器(SocialAuthenticationFilter),拦截未做身份验证的请求.
+    SocialAuthenticationService负责根据请求中携带的providerId,找到对应的ConnectionFactory,也就是qq的连接工厂,
+    该工厂创建出对应的Authentication(SocialAuthenticationToken).然后传给AuthenticationManager.
+    该类根据其类型不同,挑选出对应的服务提供商(AuthenticationProvider)进行登录.
+    然后还会根据该第三方用户的id去关联表中查询其在业务系统中的用户id,然后查询出对应的用户,然后封装为SocialUserDetail.
+    再将这个userDetail注入到之前的Authentication中.
+    
+    需要注意.这整个流程,同时需要处理用户qq登录前和qq登录回调两个需求.
+    登陆前,引导用户到qq登录,回调时,根据返回的授权码,再去获取到token.再用token获取到用户信息.然后注入到对像中,
+    
+    可查看OAuth2AuthenticationService类的getAuthToken方法.
+    根据用户是否有code(授权码)判断用户是哪一步骤.如果没有.抛出了一个重定向异常,让用户重定向到qq的登录url去.
+    
+    此时.该qq登录还有bug,就是跳转回来后.进入了signin页面,然后404,跳转到了自定义的错误页面.
+    其原因就是在拿到授权码,换取token时,返回的是text/html格式的数据(其实就是一个用&join了若干属性的字符串),而social需要的是json格式的数据.
+    然后导致结果为空,抛出异常后,在它自己的异常处理器中跳转到了/signin路径.
+    
+    目前他(OAuth2Template(用来发送换取令牌Http请求的类))能处理的格式就是HttpEntity(form)格式的和json格式的响应.
+    QQOAuth2Template该类.是自定义用来是适配qq的授权码换取令牌的请求和标准OAuth2协议不同的地方的类.
+>

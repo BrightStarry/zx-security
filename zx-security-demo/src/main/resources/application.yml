@@ -1,3 +1,5 @@
+server:
+  port: 80
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
@@ -23,7 +25,12 @@ zx:
       #配置自定义登录页
 #      loginPage: /login.html
     social:
+      #可自行配置的回调地址前缀,完整的回调地址是: 该url + "/" + providerId(服务提供商唯一标识)
+      filterProcessesUrl: /qqLogin
       qq:
-        appId: wxd99431bbff8305a0
-        appSecret: 60f78681d063590a469f1b297feff3c4
-        providerId: qq
+        appId: 100550231
+        appSecret: 69b6ab57b22f3c2fe6a6149274e3295e
+        #服务提供商唯一标识, 此处为了适配不同的回调url,可做修改
+        providerId: callback.do
+
+

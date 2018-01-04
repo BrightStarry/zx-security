@@ -3,6 +3,7 @@ package com.zx.security.core.social.qq.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.social.oauth2.AbstractOAuth2ApiBinding;
 import org.springframework.social.oauth2.TokenStrategy;
@@ -63,10 +64,12 @@ public class QQImpl extends AbstractOAuth2ApiBinding implements QQ {
         //发送请求,获取返回值
         String result = getRestTemplate().getForObject(url, String.class);
 
+        //callback( {"client_id":"100550231","openid":"0E68EE8447B17286294053A99490A1A5"} )
         log.info("openId返回值:{}",result);
 
         //从返回值中获取openid
-        this.openId = String.valueOf(new GsonJsonParser().parseMap(result).get("openId"));
+
+        this.openId = StringUtils.substringBetween(result,"\"openid\":\"","\"}");
 
 
     }
@@ -76,6 +79,9 @@ public class QQImpl extends AbstractOAuth2ApiBinding implements QQ {
         //发起请求,获取用户信息,还一个参数accessToken交由父类的token策略自行处理
         String url = String.format(URL_GET_USERINFO, appId, openId);
         String result = getRestTemplate().getForObject(url, String.class);
+
+        log.info("获取用户信息:{}",result);
+
         //json转换,并附上openId
         try {
             return objectMapper.readValue(result, QQUserInfo.class).setOpenId(openId);

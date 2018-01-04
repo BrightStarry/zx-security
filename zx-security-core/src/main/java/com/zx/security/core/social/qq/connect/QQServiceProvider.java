@@ -38,7 +38,7 @@ public class QQServiceProvider extends AbstractOAuth2ServiceProvider<QQ>{
          * 3. 对应授权码模式第1步,将用户导向认证服务器时的url(让用户去认证服务器进行登录)
          * 4. 对应授权码模式第4步,用户在认证服务器认证成功,并返回授权码,我们用授权码去换取令牌的url
          */
-        super(new OAuth2Template(appId,appSecret,URL_AUTHORIZE,URL_ACCESS_TOKEN));
+        super(new QQOAuth2Template(appId,appSecret,URL_AUTHORIZE,URL_ACCESS_TOKEN));
         this.appId = appId;
     }
 

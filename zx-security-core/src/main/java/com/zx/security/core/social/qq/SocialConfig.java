@@ -1,5 +1,7 @@
 package com.zx.security.core.social.qq;
 
+import com.zx.security.core.properties.SecurityProperties;
+import com.zx.security.core.social.CustomSpringSocialConfigurer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +28,9 @@ public class SocialConfig extends SocialConfigurerAdapter{
     @Autowired
     private DataSource dataSource;
 
+    @Autowired
+    private SecurityProperties securityProperties;
+
     /**
      * 实现获取UsersConnectionRepository的方法
      *
@@ -38,11 +43,16 @@ public class SocialConfig extends SocialConfigurerAdapter{
     }
 
     /**
-     * 返回配置类
+     * 将SpringSocial配置类加入spring Bean,以用来注入SpringSecurity配置类
+     * 之所以直接返回,只因为该类中已经有了默认的一些配置,
+     * 例如将SocialAuthenticationFilter过滤器加入过滤器链等
+     *
+     * 返回自定义的配置类
      */
     @Bean
     public SpringSocialConfigurer zxSocialSecurityConfig() {
-        return new SpringSocialConfigurer();
+        String filterProcessesUrl = securityProperties.getSocial().getFilterProcessesUrl();
+        return new CustomSpringSocialConfigurer(filterProcessesUrl);
     }
 
 }

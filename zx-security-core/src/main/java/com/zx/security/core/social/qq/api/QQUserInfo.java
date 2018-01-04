@@ -17,7 +17,8 @@ public class QQUserInfo {
 
     private String openId;//用户id 不是返回来的,需要自行添加
 
-    private String ret;//返回码
+    private Integer is_lost;//..文档中没有
+    private Integer ret;//返回码
     private String msg;//如果ret<0，会有相应的错误信息提示，返回数据全部用UTF-8编码。
     private String nickname;//用户在QQ空间的昵称。
     private String figureurl;//大小为30×30像素的QQ空间头像URL。
@@ -31,4 +32,7 @@ public class QQUserInfo {
     private String yellow_vip_level;//黄钻等级
     private String level;//黄钻等级
     private String is_yellow_year_vip;//标识是否为年费黄钻用户（0：不是； 1：是）
+    private String province;//省份
+    private String city;//城市
+    private String year;//出生年分
 }
