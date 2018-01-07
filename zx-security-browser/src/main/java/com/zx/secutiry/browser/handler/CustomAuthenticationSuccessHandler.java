@@ -1,4 +1,4 @@
-package com.zx.security.core.authentication.handler;
+package com.zx.secutiry.browser.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zx.security.core.properties.LoginType;

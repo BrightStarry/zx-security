@@ -1,8 +1,9 @@
-package com.zx.security.core.authentication.handler;
+package com.zx.secutiry.browser.handler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zx.security.core.properties.LoginType;
 import com.zx.security.core.properties.SecurityProperties;
+import com.zx.security.core.support.SimpleResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -47,7 +48,7 @@ public class CustomAuthenticationFailHandler extends SimpleUrlAuthenticationFail
             response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
             //将authentication对象转为jsonString,返回
 //            response.getWriter().write(objectMapper.writeValueAsString(e));
-            response.getWriter().write(e.getMessage());
+            response.getWriter().write(objectMapper.writeValueAsString(new SimpleResponse(e.getMessage())));
         }else{
             //否则使用父类处理方法,重定向
            super.onAuthenticationFailure(request,response,e);

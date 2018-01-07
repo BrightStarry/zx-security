@@ -1,14 +1,12 @@
 package com.zx.security.core.authentication.mobile;
 
-import com.zx.security.core.authentication.handler.CustomAuthenticationFailHandler;
-import com.zx.security.core.authentication.handler.CustomAuthenticationSuccessHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.SecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.DefaultSecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.*;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,10 +20,10 @@ public class SmsCaptchaAuthenticationSecurityConfig
         extends SecurityConfigurerAdapter<DefaultSecurityFilterChain,HttpSecurity> {
 
     @Autowired
-    private CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private AuthenticationSuccessHandler customAuthenticationSuccessHandler;
 
     @Autowired
-    private CustomAuthenticationFailHandler customAuthenticationFailHandler;
+    private AuthenticationFailureHandler customAuthenticationFailHandler;
 
     @Autowired
     private UserDetailsService customUserDetailsService;

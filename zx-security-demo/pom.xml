@@ -13,9 +13,15 @@
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
+        <!--<dependency>-->
+            <!--<groupId>com.zx.security</groupId>-->
+            <!--<artifactId>zx-security-browser</artifactId>-->
+            <!--<version>${zx.security.version}</version>-->
+        <!--</dependency>-->
+
         <dependency>
             <groupId>com.zx.security</groupId>
-            <artifactId>zx-security-browser</artifactId>
+            <artifactId>zx-security-app</artifactId>
             <version>${zx.security.version}</version>
         </dependency>
 

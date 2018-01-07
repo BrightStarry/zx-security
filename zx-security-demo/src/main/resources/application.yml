@@ -13,9 +13,14 @@ spring:
   redis:
     host: 106.14.7.29
     password: 123456
-#security:
+security:
 #  basic:
-#    enabled: false #暂时关闭spring-security的配置，不然会报错
+#    enabled: false #可以暂时关闭spring-security的配置
+  oauth2:
+    client:
+      client-id: zx
+      client-secret: 123456
+
 
 
 

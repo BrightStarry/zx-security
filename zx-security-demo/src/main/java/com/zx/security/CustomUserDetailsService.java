@@ -63,6 +63,6 @@ public class CustomUserDetailsService implements UserDetailsService,SocialUserDe
                 //几个校验方法的值
                 true,true,true,true,
                 //将用逗号分割的字符串转为权限集合
-                AuthorityUtils.commaSeparatedStringToAuthorityList("admin"));
+                AuthorityUtils.commaSeparatedStringToAuthorityList("admin,ROLE_USER"));
     }
 }

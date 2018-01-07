@@ -81,14 +81,7 @@ public class BrowserSecurityConfig extends WebSecurityConfigurerAdapter{
         return tokenRepository;
     }
 
-    /**
-     * 注册密码加密类,
-     * 使用已有的BCryptPasswordEncoder类作为实现
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+
 
 
 
