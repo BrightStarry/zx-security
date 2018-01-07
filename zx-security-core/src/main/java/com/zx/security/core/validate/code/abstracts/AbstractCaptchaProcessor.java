@@ -45,8 +45,17 @@ public abstract class AbstractCaptchaProcessor<C extends Captcha> implements Cap
 
     //保存
     private void save(String type,ServletWebRequest request, Captcha captcha) {
+        /**
+         * 此处的转换是因为
+         * 该验证码需要存入session,而session需要存入redis.
+         * 而存入redis的所有对象包括对象中的属性对象都需要实现序列化接口.
+         * 而如果是图形验证码,则会有一个 图片流 对象没有实现序列化,抛弃他生成新的只有code和过期时间的对象即可
+         */
+
+        Captcha captcha1 = new Captcha(captcha.getCode(), captcha.getExpireTime());
+
         //放入session,根据类型选择不同的key
-        sessionStrategy.setAttribute(request,SESSION_CAPTCHA_PRE + type,captcha);
+        sessionStrategy.setAttribute(request,SESSION_CAPTCHA_PRE + type,captcha1);
     }
 
     //最终处理

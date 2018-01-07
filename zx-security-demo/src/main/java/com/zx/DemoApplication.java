@@ -1,5 +1,6 @@
 package com.zx;
 
+import com.google.gson.Gson;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,7 @@ public class DemoApplication {
 
     @GetMapping("/test")
     public String hello() {
+        new Gson();
         return "hello zx";
     }
 }

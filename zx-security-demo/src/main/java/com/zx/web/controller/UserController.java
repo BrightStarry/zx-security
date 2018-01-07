@@ -7,15 +7,19 @@ import com.zx.exception.UserNotExistException;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.social.connect.web.ProviderSignInUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.ServletWebRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.Arrays;
 import java.util.Date;
@@ -29,6 +33,27 @@ import java.util.List;
 @RestController
 @RequestMapping("/user")
 public class UserController {
+
+    @Autowired
+    private ProviderSignInUtils providerSignInUtils;
+
+
+    /**
+     * 注册
+     */
+    @PostMapping("/register")
+    public void register(User user, HttpServletRequest request) {
+        //注册或是绑定用户逻辑
+        //成功后都会拿到用户唯一标识
+        //此处暂时用 用户名作为唯一标识
+        String userId = user.getUsername();
+
+        //将用户唯一标识 传递给 social, social通过request从session中取出第三方用户信息
+        //和该唯一标识一起插入到  它自带的 关联表中.
+        providerSignInUtils.doPostSignUp(userId,new ServletWebRequest(request));
+    }
+
+
 
     @DeleteMapping("/{id:\\d+}")
     public void delete(@PathVariable String id) {

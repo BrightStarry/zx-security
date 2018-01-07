@@ -1,8 +1,10 @@
 package com.zx.security.core.validate.code.sms;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.awt.image.BufferedImage;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -11,7 +13,8 @@ import java.time.LocalDateTime;
  * 验证码
  */
 @Data
-public class Captcha {
+@AllArgsConstructor
+public class Captcha implements Serializable{
 
     //随机数
     protected String code;

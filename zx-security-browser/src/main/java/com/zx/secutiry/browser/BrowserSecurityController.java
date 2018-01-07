@@ -2,6 +2,7 @@ package com.zx.secutiry.browser;
 
 import com.zx.security.core.properties.SecurityProperties;
 import com.zx.secutiry.browser.support.SimpleResponse;
+import com.zx.secutiry.browser.support.SocialUserInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,9 +12,13 @@ import org.springframework.security.web.RedirectStrategy;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
+import org.springframework.social.connect.Connection;
+import org.springframework.social.connect.web.ProviderSignInUtils;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -41,15 +46,22 @@ public class BrowserSecurityController {
     private SecurityProperties securityProperties;
 
     /**
+     * session失效时跳转的路径
+     */
+    @GetMapping("/session/invalid")
+    @ResponseStatus(code = HttpStatus.UNAUTHORIZED)//返回401,未授权状态码
+    public SimpleResponse sessionInvalid() {
+        String message = "session失效";
+        return new SimpleResponse(message);
+    }
+
+    /**
      * 当需要身份认证时,跳转到这里
      *
-     * 其需求是.如果之前访问的url不是页面,就返回异常信息;如果是页面,就跳转到登录页;
+     * 就是说.一个用户.访问了禁止未登录访问的路径.他就会跳转到此处.
+     *
+     * !!!!!!!!!!!!!!!!!!!!其需求是.如果!!之前!!访问的url不是页面,就返回异常信息;如果是页面,就跳转到登录页;
      * 此处是用访问的后缀是不是.html结尾来判断的,
-     * 我觉得比较好的是,根据请求头的context-type来判断.
-     * 就是这个:
-     *  @RequestMapping(
-     *       produces = {"text/html"}
-     *   )
      * @param request
      * @return
      */
@@ -71,5 +83,24 @@ public class BrowserSecurityController {
             }
         }
         return new SimpleResponse("访问的服务需要身份认证,请引导用户到登录页");
+    }
+
+
+    //用来获取第三方用户信息的工具类
+    @Autowired
+    private ProviderSignInUtils providerSignInUtils;
+    /**
+     * 获取到当前已经登录的第三方用户信息
+     */
+    @GetMapping("/social/user")
+    public SocialUserInfo getSocialUserInfo(HttpServletRequest request) {
+        SocialUserInfo userInfo = new SocialUserInfo();
+        //从session中获取第三方用户信息
+        Connection<?> connection = providerSignInUtils.getConnectionFromSession(new ServletWebRequest(request));
+
+        return userInfo.setProviderId(connection.getKey().getProviderId())
+                .setProviderUserId(connection.getKey().getProviderUserId())
+                .setNickname(connection.getDisplayName())
+                .setHeadimg(connection.getImageUrl());
     }
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.social.oauth2.AbstractOAuth2ApiBinding;
 import org.springframework.social.oauth2.TokenStrategy;
 
@@ -70,8 +69,6 @@ public class QQImpl extends AbstractOAuth2ApiBinding implements QQ {
         //从返回值中获取openid
 
         this.openId = StringUtils.substringBetween(result,"\"openid\":\"","\"}");
-
-
     }
 
     @Override
@@ -79,12 +76,11 @@ public class QQImpl extends AbstractOAuth2ApiBinding implements QQ {
         //发起请求,获取用户信息,还一个参数accessToken交由父类的token策略自行处理
         String url = String.format(URL_GET_USERINFO, appId, openId);
         String result = getRestTemplate().getForObject(url, String.class);
-
-        log.info("获取用户信息:{}",result);
-
         //json转换,并附上openId
         try {
-            return objectMapper.readValue(result, QQUserInfo.class).setOpenId(openId);
+            QQUserInfo qqUserInfo = objectMapper.readValue(result, QQUserInfo.class).setOpenId(openId);
+            log.info("获取用户信息:{}",qqUserInfo);
+            return qqUserInfo;
         } catch (IOException e) {
             throw new RuntimeException("获取用户信息失败", e);
         }

@@ -1,5 +1,7 @@
 server:
-  port: 80
+  port: 8080
+  session:
+    timeout: 600
 spring:
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
@@ -7,7 +9,10 @@ spring:
     username: root
     password: 123456
   session:
-    store-type: none  #暂时关闭spring-session的配置，不然会报错
+    store-type: redis #可使用none,暂时关闭spring-session的配置
+  redis:
+    host: 106.14.7.29
+    password: 123456
 #security:
 #  basic:
 #    enabled: false #暂时关闭spring-security的配置，不然会报错
@@ -17,8 +22,8 @@ spring:
 zx:
   security:
     browser:
-      #配置登录方式
-      loginType: JSON
+      login-type: json
+      sign-up-url: /demo-signUp.html
     captcha:
       image:
         length: 4
@@ -32,5 +37,8 @@ zx:
         appSecret: 69b6ab57b22f3c2fe6a6149274e3295e
         #服务提供商唯一标识, 此处为了适配不同的回调url,可做修改
         providerId: callback.do
-
+      weixin:
+        app-id: wxd99431bbff8305a0
+        app-secret: 60f78681d063590a469f1b297feff3c4
+        provider-id: weixin
 

@@ -3,6 +3,7 @@ package com.zx.security.core.validate.code;
 import com.zx.security.core.properties.SecurityProperties;
 import com.zx.security.core.validate.code.abstracts.CaptchaProcessor;
 import com.zx.security.core.validate.code.image.ImageCaptcha;
+import com.zx.security.core.validate.code.sms.Captcha;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -94,7 +95,7 @@ public class CaptchaFilter extends OncePerRequestFilter implements InitializingB
     //验证验证码是否正确
     private void validate(ServletWebRequest request) throws ServletRequestBindingException {
         //从session中获取正确的验证码
-        ImageCaptcha captcha = (ImageCaptcha) sessionStrategy.getAttribute(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "image");
+        Captcha captcha = (Captcha) sessionStrategy.getAttribute(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "image");
         //获取请求中的验证码
         String requestCaptcha = ServletRequestUtils.getStringParameter(request.getRequest(), "captcha");
 

@@ -1,5 +1,6 @@
 #### Spring Security 
-此外还有关于异步处理/hibernate validation/文件上传下载/拦截器等/swagger等,在AsyncResult.md
+* 此外还有关于异步处理/hibernate validation/文件上传下载/拦截器等/swagger等,在AsyncResult.md  
+* 以及OAuth2协议的介绍和qq登录,在QQLogin.md
 
 #### 关于设计模式在项目开发中运用的感想
         关于设计模式,我曾经照着一篇博客,敲打过几乎常用的所有设计模式.然后在项目中真正运用得并不多.
@@ -27,7 +28,49 @@
 * !!!之前遇到HttpClient发送json串请求controller方法,参数一直为null.是因为没有加@RequestBody.
 * !!!spring boot 属性注入 @ConfigurationProperties 必须有getter/setter方法才能生效 血泪教训
 
+#### 重大发现.特大新闻.
+* 一直以来.我都有一个疑问.就是为什么自己配置的@ConfigurationProperties.总是无法在application.yml文件中自动提示.显示无法解析.
+于是我今天特地好好研究了一番.找了另一框架中的自定义配置,反复对比我和它的差别.无意间还点进了一个文件:  
+META-INF/spring-configuration-metadata.json. 我以为找到了答案.但是他的配置很繁琐,不可能
+每个属性都这么配置过去.而且这个文件只有在编译后才会出现..   
+恍然大雾...比对(我和kafkaProperties都是嵌套的属性)..将子属性类变成父属性类的静态内部类..重新编译.  
+在yml中出现了自动提示. Java规范的属性名是驼峰.它默认将驼峰转换为 'xx-xx'. 但手动输入原属性名.也是可以匹配上的. END
+
+* 而后,又出现一个问题.就是当我自定义属性上使用javadoc注解了中文注释时.在yml的自动提示中乱码了.  
+我的IDEA很早将几乎所有编码都设置成了UTF-8,在metadata.json中,也是UTF-8,并且其他所有地方都不存在乱码.  
+于是.海里捞针的百度..终于发现了问题
+> 在idea目录/bin中的idea64.exe.vmoptions中,追加-Dfile.encoding=UTF-8,重启IDEA即可.
+
+* 而后..他突然莫名其妙又提示无法解析..重新编译.重启IDEA等都试了..打开那个json文件看了下..
+果然,是文件中没有生成.于是乎..先clean.再重新编译.ok.
+
+
 #### 奇淫巧技
+* 如下打包时,可以将所有依赖都打到jar中去运行.基于springboot
+>
+    <!--spring boot专门的打包工具，将所有依赖的jar打到一个jar中直接运行-->
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+>
+
+* maven打包时,必须将自己依赖的其他子模块都先install.
+
+* 在yml中如下配置session超时时间,单位为秒.但是如果.小于60s,默认也会转为1分钟.
+>
+    server:
+      session:
+        timeout: 10
+>
+
 * StringUtils.substringBetween()  截取字符串中,被哪两个首位字符包裹的字符串
 
 * 如下代码表示当配置了该属性时,该bean才注入
@@ -102,7 +145,7 @@ resource.getFile();
 注意,如果传参不符合该正则,返回的状态码将是404
 
 
-* 使用如下代码，可以在不动实体类的情况下，发射实体类的toString方法：  
+* 使用如下代码，可以在不修改实体类的情况下，反射实体类的toString方法：  
 ReflectionToStringBuilder.toString(userQueryCondition, ToStringStyle.MULTI_LINE_STYLE);  
 直接sout上面的表达式即可输出；  
 
@@ -822,220 +865,65 @@ Bean:
 这些我是真的懒得打了... 
 
 
+#### Session 
+* 处理session失效
+>
+    在配置类中如下配置
+    .and()
+    .sessionManagement()
+        .invalidSessionUrl("/session/invalid")//session失效后跳转到的路径
+    //  .invalidSessionStrategy(InvalidSessionStrategy)//可以自定义session失效时的策略
+    .and()
+>
 
-#### OAuth2协议
-* 角色
-    * client: 第三方服务
-    * Resource Owner: 资源所有者,也就是用户
-    * Provider: 服务提供商-例如QQ这样我们需要他的用户信息的提供商
-        * Authorization: 认证服务器,用来获取token
-        * Resource Server: 资源服务器,用token来获取client授权了的资源
-* 普通流程
-![普通流程](image/4.png)
-
-* OAuth协议中的授权模式
-    * 授权码模式
-    * 密码模式
-    * 客户端模式
-    * 简化模式
+* 处理session并发登录
+>
+    在配置类中如下配置
+    .and()
+    .sessionManagement()
+        .invalidSessionUrl("/session/invalid")//session失效后跳转到的路径
+        //.invalidSessionStrategy(InvalidSessionStrategy)//可以自定义session失效时的策略
+        .maximumSessions(1)//同一session同一时间最大数量,一般就是1,也就是不同机器登录会被挤下线
+        .maxSessionsPreventsLogin(true)//该参数表示,当session并发到达最大值后,不允许后来者再登录
+        // .expiredUrl("xxx")//session被挤下线后跳转的url
+        .expiredSessionStrategy(customExpiredSessionStrategy)//被挤下线后的自定义策略
+    .and()//这个and返回SessionManagementConfigurer
+    .and()//这个and才返回原配置类  
     
-* 授权码模式
-![授权码模式](image/5.png)
-与其他模式的区别在于,  
-其他模式同意授权的动作是在第三方应用上完成的,该模式在认证服务器上完成;    
-用户同意授权后,该模式中认证服务器返回第三方的是一个授权码,而不是直接返回令牌.
-
-#### Spring Social
-![基本组件](image/6.png)
-* 其基本原理就是在最后一步,用户通过token获取到用户信息后,  
-    在SpringSecurity中,将用户信息构建成Authentication,并放入Security,也就相当于登录成功了.  
-
-* Social框架将这么一个流程封装到了一个SocialAuthenticationFilter过滤器中,  
-    然后将该过滤器加到了SpringSecurity的过滤器链中.
-
-* ServiceProvider(AbstractOAuth2ServiceProvider):服务提供商的抽象,
-针对不同的服务提供商,例如QQ/微信,需要继承并实现不同的类
-
-* OAuth2Operations(OAuth2Template):操作接口,封装了OAuth2协议,从用户授权到获取令牌的所有流程
-
-* Api(AbstractOAuth2ApiBinding):自行实现的接口,根据服务提供商提供获取用户信息这也样一个行为
-
-* Connection(OAuth2Connection):封装获取到的用户信息
-
-* ConnectionFactory(OAuth2ConnectionFactory):创建Connection实例,也就是在这个工厂中,为了创建  
-    Connection,包含了ServiceProvider,包括上面这些步骤,都是通过该类调用,知道最后一步获取到用户信息,  
-    然后该类创建Connection.
-* ApiAdapter:在Api和Connection之间做一个适配,将每个服务提供商提供的不同的用户信息适配
-
-* DBUserConnection:Social提供的一张数据库表,存储了自己系统里的普通用户和服务提供商获取的用户的一个  
-    对应关系.由此,可以在第三方登录的时候,知道是哪个本地用户登录了
-
-* UserConnectionRepository(JdbcUsersConnectionRepository):用来操作DBUserConnection表,
-    将第三方登陆用户和自己的业务用户联系起来
-
-
-#### 再次整理下上面的逻辑
-* 我们需要的是Connection(OAuth2Connection),也就是用户信息.
-* 获取用户信息,需要ConnectionFactory(OAuth2ConnectionFactory).该工厂封装了所有步骤.
-* 构建这个工厂,需要ServiceProvider(AbstractOAuth2ServiceProvider)服务提供商
-和ApiAdapter适配器,适配获取用户信息的Api(AbstractOAuth2ApiBinding)接口和Connection用户信息
-* 而为了构建ServiceProvider服务提供商,就需要OAuth2Operations(OAuth2Template):操作接口(从用户授权到获取令牌的所有流程)
-和Api(AbstractOAuth2ApiBinding)根据服务提供商提供获取用户信息这也样一个行为的接口
-* 所以,最根本的实现是从底层的API接口开始,一步一步往上走
-
-
-#### 开始开发第三方登录 :zx-security-core
-* Api(AbstractOAuth2ApiBinding):QQ接口:QQImpl实现类:获取用户信息.
->
-    定义QQ接口,定义获取用户信息方法.
-    定义QQImpl类,实现QQ接口,并继承AbstractOAuth2ApiBinding类.
+    自定义策略类自己看.就是返回了个json.也可以直接重定向到一个url.
+    最终效果就是.用户异地再登录后,前一个用户再次访问,就执行了自定义策略.  
     
-    AbstractOAuth2ApiBinding类中.
-    有accessToken(令牌)属性,用来向服务提供商换取用户信息(授权码模式第6步).
-    因为该属性,每个用户都是不同的,所以QQImpl不是单例对象,每次进行第三方登录时,都会创建一个QQImpl;
-    还有一个RestTemplate类.用来发送http请求.获取用户信息.
+    或者就是上面配置类中的,并发上限达到后,不允许后来者再登录.
+>
+
+* 集群时的session共享.用spring-session和redis实现
+导入spring-session依赖后,如下即可.
+>
+    spring:
+      session:
+        store-type: redis  #可使用none,暂时关闭spring-session的配置
+      redis:
+        host: 106.14.7.29
+        password: 123456
+>
+
+* 注销处理
+>
+    注销的默认请求路径是 /logout
     
-    在qq的文档中.获取用户信息,需要三个参数.其中的令牌就是accessToken.
-    所以只需要再在QQImpl中添加上剩余的两个参数appId和openId即可.
-    
-    此外还有两个路径.
-    一个就是根据这三个参数获取用户信息的路径.
-    还一个是用accessToken获取用户openId的路径.
-    
-    然后具体逻辑见该类注释
->
-
-* OAuth2Operations(OAuth2Template):操作接口,封装了OAuth2协议,从用户授权到获取令牌的所有流程;  
-该类暂时使用spring social 的默认实现.(补充,目前自定义了.修改了用授权码换取到token并返回解析的一些方法)
-
-* ServiceProvider(AbstractOAuth2ServiceProvider):服务提供商的抽象.
->
-    定义QQServiceProvider,实现AbstractOAuth2ServiceProvider接口.
-    实现了其创建QQImpl的抽象方法和 注入 OAuth2Operations(OAuth2Template)的构造方法.
-    
-    具体见该类注释
->
-
-* ApiAdapter:在每个服务提供商的用户信息和spring social的标准信息之间做一个适配,将每个服务提供商提供的不同的用户信息适配
->
-    定义QQAdapter类,实现ApiAdpater<QQ>接口.
-    完成从每个运营商的不同的用户信息中,获取出用户id/昵称/头像/主页信息的适配方法
-    等其他方法.
->
-
-* ConnectionFactory(OAuth2ConnectionFactory):Connection实例工厂
->
-    需要有ApiAdapter 和 ServiceProvider.
-    实现其构造函数即可
->
-
-* UserConnectionRepository(JdbcUsersConnectionRepository):用来操作DBUserConnection表,将第三方登陆用户和自己的业务用户联系起来
->
-    定义了social的配置类,并继承了SocialConfigurerAdapter类,实现getUsersConnectionRepository方法即可
-    此时还需要创建对应的表,对应的sql在JdbcUsersConnectionRepository类的同级目录下(JdbcUsersConnectionRepository.sql)
-    需要手动创建.如果需要给表名加前缀.可以在创建JdbcUsersConnectionRepository该类后,setTablePrefix.
-    
-    该表的一些字段
-    用户id(自己业务系统中)/服务提供商的id/服务提供商的用户id  这个字段存储了业务系统中的用户和第三方登录用户的对应关系
-    还有ApiAdapter适配器中设置的值.包括用户名/用户主页.用户头像等
->
-
-* SocialUserDetailsService:根据用户id(自己业务系统的)加载对应的用户信息返回
->
-    直接让之前的CustomUserDetailsService类,再实现SocialUserDetailsService接口即可.
-    再将该类从browser模块移动到demo模块.因为该类需要根据业务表自行实现.
->
-
-* 添加qq登录所需的配置属性
->
-    定义QQProperties extends SocialProperties(该类就需要appId和appSecert).
-    然后只需再增加一个providerId(服务提供商唯一标识即可)
-    然后在定义一个SocialProperties,将QQProperties作为属性.
-    再将SocialProperties作为属性放入SecurityProperties作为属性.
+    注销时security的处理逻辑
+        1. 使当前session失效
+        2. 清除remember-me记录
+        3. 清空当前的EecurityContext
+        4. 重定向到登录页并携带一个logout的空参数 
         
-    再实现qq配置自动注入类.
-    @Configuration
-    @ConditionalOnProperty(prefix = "zx.security.social.qq",name = "appId")
-    public class QQAutoConfig extends SocialAutoConfigurerAdapter{
-        @Autowired
-        private SecurityProperties securityProperties;
-    
-        @Override
-        protected ConnectionFactory<?> createConnectionFactory() {
-            QQProperties qq = securityProperties.getSocial().getQq();
-            return new QQConnectionFactory(qq.getProviderId(),qq.getAppId(),qq.getAppSecret());
-        }
-        
-    }    
-    
-    再在SocialConfig中配置
-    /**
-         * 将SpringSocial配置类加入spring Bean,以用来注入SpringSecurity配置类
-         * 之所以直接返回,只因为该类中已经有了默认的一些配置,
-         * 例如将SocialAuthenticationFilter过滤器加入过滤器链等
-         */
-        @Bean
-        public SpringSocialConfigurer zxSocialSecurityConfig() {
-            return new SpringSocialConfigurer();
-        }
-     然后将其加入security的配置链中,就会在security当然过滤器链中加入social的过滤器
-     http.apply(zxSocialSecurityConfig).and()
- 
+    如下配置即可
+    .logout()
+        .logoutUrl("/logout")//请求注销的url,默认是/logout
+        .logoutSuccessUrl("/logout.html")//注销成功后跳转到的路径
+    //      .logoutSuccessHandler()//自定义注销成功后的处理逻辑
+    //       .deleteCookies("")//注销时可删除指定key的cookies
+    .and()
 >
 
-* 然后在页面上配置
->
-    <h1>社交登录</h1>
-    <a href="/auth/qq">QQ登录</a>
-    
-    注意,所有/auth请求.都会被SocialAuthenticationFilter拦截
-    然后第二段/qq就是providerId.也就是每个服务提供商的唯一标识
-    这样.点击这个链接.就会进入qq登录
->
 
-* 用户自行登录成功后,spring social默认的回调地址还是/quth/qq  
-如果需要修改回调地址.可以选择
->
-    以下是为了适配课程中的 /qqLogin/callback.do 这么一个回调地址
-    
-    自定义了一个CustomSpringSocialConfigurer类,继承了SpringSocialConfigurer,
-    重写了获取过滤器的方法,在该方法中,照样调用父类的实现,然后在返回结果,也就是该过滤器后,
-    修改了它要处理的url值.
-    然后在上面返回SpringSocialConfigurer Bean的时候,返回自己定义的这个类,
-    并且需要在构造参数中注入自定义的url.
-    
-    然后上面引导用户跳转到qq登录的url地址,也需要改成我们自己自定义的url
-    然后还要修改url的后缀,也就是/callback.do这段.只需要把providerId改成对应的值即可.
->
-
-* 此处.因为课程中的qq帐号的完整回调地址是http://www.pinzhi365.com/qqLogin/callback.do  
-为了,测试,还需要在hosts中将该主机名指向127.0.0.1,然后访问的时候.  
-也需要用www.pinzhi365.com替代127.0.0.1  
-这样子是为了.让spring social传递给qq的回调地址的主机名,也变成www.pinzhi365.com
- 
-* 然后,登录完成后.qq回调回来.可以在之前的过滤器中看到日志
-> 引发跳转的请求是:http://www.pinzhi365.com/signin
-
-* 整个social大致的处理流程如下
-![](image/7.png)
->
-    一个过滤器(SocialAuthenticationFilter),拦截未做身份验证的请求.
-    SocialAuthenticationService负责根据请求中携带的providerId,找到对应的ConnectionFactory,也就是qq的连接工厂,
-    该工厂创建出对应的Authentication(SocialAuthenticationToken).然后传给AuthenticationManager.
-    该类根据其类型不同,挑选出对应的服务提供商(AuthenticationProvider)进行登录.
-    然后还会根据该第三方用户的id去关联表中查询其在业务系统中的用户id,然后查询出对应的用户,然后封装为SocialUserDetail.
-    再将这个userDetail注入到之前的Authentication中.
-    
-    需要注意.这整个流程,同时需要处理用户qq登录前和qq登录回调两个需求.
-    登陆前,引导用户到qq登录,回调时,根据返回的授权码,再去获取到token.再用token获取到用户信息.然后注入到对像中,
-    
-    可查看OAuth2AuthenticationService类的getAuthToken方法.
-    根据用户是否有code(授权码)判断用户是哪一步骤.如果没有.抛出了一个重定向异常,让用户重定向到qq的登录url去.
-    
-    此时.该qq登录还有bug,就是跳转回来后.进入了signin页面,然后404,跳转到了自定义的错误页面.
-    其原因就是在拿到授权码,换取token时,返回的是text/html格式的数据(其实就是一个用&join了若干属性的字符串),而social需要的是json格式的数据.
-    然后导致结果为空,抛出异常后,在它自己的异常处理器中跳转到了/signin路径.
-    
-    目前他(OAuth2Template(用来发送换取令牌Http请求的类))能处理的格式就是HttpEntity(form)格式的和json格式的响应.
-    QQOAuth2Template该类.是自定义用来是适配qq的授权码换取令牌的请求和标准OAuth2协议不同的地方的类.
->

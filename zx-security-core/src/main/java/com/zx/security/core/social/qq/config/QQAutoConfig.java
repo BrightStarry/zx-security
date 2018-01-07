@@ -1,6 +1,5 @@
 package com.zx.security.core.social.qq.config;
 
-import com.zx.security.core.properties.QQProperties;
 import com.zx.security.core.properties.SecurityProperties;
 import com.zx.security.core.social.qq.connect.QQConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +20,13 @@ public class QQAutoConfig extends SocialAutoConfigurerAdapter{
     @Autowired
     private SecurityProperties securityProperties;
 
+    /**
+     * 将自定义的qq相关配置注入qq的连接工厂
+     * @return
+     */
     @Override
     protected ConnectionFactory<?> createConnectionFactory() {
-        QQProperties qq = securityProperties.getSocial().getQq();
+        SecurityProperties.SocialProperties.QQProperties qq = securityProperties.getSocial().getQq();
         return new QQConnectionFactory(qq.getProviderId(),qq.getAppId(),qq.getAppSecret());
     }
 }
