@@ -135,3 +135,143 @@
 * 然后再次发起请求,header携带上   
 > Authorization : bearer eb715f85-e813-4586-bef0-5a4545248ca0    
 (bearer为之前返回的token_type),即可成功
+
+
+#### SpringSecurityOAuth2核心源码解析
+![](image/10.png)
+* TokenEndpoint: 接收获取令牌请求
+* ClientDetailService:根据client和密码查询是哪个应用.
+* ClientDetails:应用信息
+* TokenRequest: 请求中其他信息,clientDetails也会在其中
+* TokenGranter: 根据OAuth2模式,以及刷新令牌,生成不同的逻辑..
+    * OAuth2Request:  ClientDetails和TokenRequest的整合
+    * Authentication: 当前授权用户的信息
+* OAuth2Authentication: 包含 应用信息/授权用户信息/OAuth2模式/请求参数等各类信息
+* AuthorizationServerTokenServices(认证服务器令牌服务): 生成令牌
+* OAuth2AccessToken:令牌 
+
+#### 重构框架代码,使其支持 帐号密码/短信验证码/社交 登录三种方式
+![](image/11.png)
+* 自己重写前面的全部逻辑.
+* 其实也就是普通登录成功后,在SuccessHandler中,调用AuthorizationServerTokenServices获取一个accessToken.
+* 为了调用该services,需要OAuth2Authentication,而他需要OAuth2Request和Authentication(这个在successHandler中已经构建了)
+* OAuth2Request需要使用ClientDetails和TokenRequest构建
+
+* 在app模块的successHandler类中编写
+>
+     //用来根据client_id查询应用信息,springSecurity默认已经配置好了,直接注入即可
+        @Autowired
+        private ClientDetailsService clientDetailsService;
+        //用来构造令牌的类
+        @Autowired
+        private AuthorizationServerTokenServices authorizationServerTokenServices;
+        /**
+         * 当登陆成功时
+         *
+         * @param request
+         * @param response
+         * @param authentication 封装了认证信息
+         */
+        @Override
+        public void onAuthenticationSuccess(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            Authentication authentication) throws IOException, ServletException {
+            log.info("登录成功");
+            /**
+             * 解析请求头中的 Authorization
+             *
+             * header传参的格式(也就是basic auth方式)
+             *    "Authorization" : "bearer eb715f85-e813-4586-bef0-5a4545248ca0"
+             *    可以从已有的BasicAuthenticationFilter中获取从请求头中获取client_id的代码
+             */
+            String header = request.getHeader("Authorization");
+            //如果没有,或者,不以Basic 开头.
+            if (header == null || !header.startsWith("Basic ")) {
+                throw new UnapprovedClientAuthenticationException("请求头中无client信息");
+            }
+    
+            String[] tokens = extractAndDecodeHeader(header, request);
+            assert tokens.length == 2;
+    
+            /**
+             * 获取ClientDetails并验证
+             */
+            String clientId = tokens[0];
+            String clientSecret = tokens[1];
+            //查询应用信息
+            ClientDetails clientDetails = clientDetailsService.loadClientByClientId(clientId);
+            //此处无需做非空判断,因为service中已经做过
+            //只需判断密码是否一致
+            if (StringUtils.equals(clientDetails.getClientSecret(), clientSecret)) {
+                throw new UnapprovedClientAuthenticationException("clientSecret不匹配:" + clientId);
+            }
+    
+            /**
+             * 构造
+             * 1:请求的参数Map,用来构造Authentication,我们有了,直接传空
+             * 4.OAuth2的模式,此处我们是自定义协议,就随便传个custom
+             */
+            TokenRequest tokenRequest = new TokenRequest(MapUtils.EMPTY_MAP, clientId, clientDetails.getScope(), "custom");
+    
+            //创建OAuth2Request
+            OAuth2Request oAuth2Request = tokenRequest.createOAuth2Request(clientDetails);
+    
+            //创建oAuth2Authentication
+            OAuth2Authentication oAuth2Authentication = new OAuth2Authentication(oAuth2Request, authentication);
+    
+            /**
+             * 创建token
+             */
+            OAuth2AccessToken accessToken = authorizationServerTokenServices.createAccessToken(oAuth2Authentication);
+    
+            response.setContentType(MediaType.APPLICATION_JSON_UTF8_VALUE);
+            //返回令牌
+            response.getWriter().write(objectMapper.writeValueAsString(accessToken));
+        }
+    
+        /**
+         * 对 请求头中的client_id 和密码进行Base64解码
+         */
+        private String[] extractAndDecodeHeader(String header, HttpServletRequest request)
+                throws IOException {
+    
+            byte[] base64Token = header.substring(6).getBytes("UTF-8");
+            byte[] decoded;
+            try {
+                decoded = Base64.decode(base64Token);
+            } catch (IllegalArgumentException e) {
+                throw new BadCredentialsException(
+                        "Failed to decode basic authentication token");
+            }
+            //解码后的client_id和密码格式为  <client_id>:<密码>
+            String token = new String(decoded, "UTF-8");
+    
+            int delim = token.indexOf(":");
+    
+            if (delim == -1) {
+                throw new BadCredentialsException("Invalid basic authentication token");
+            }
+            //冒号前为client_id,冒号后为密码
+            return new String[]{token.substring(0, delim), token.substring(delim + 1)};
+        }
+>
+
+* 在app的CustomResourceServerConfig中配置app的安全规则
+> CustomResourceServerConfig 详见
+
+* 此时,我们使用postman模拟表单登录
+>
+    127.0.0.1:8080/login
+    选择Authorization的Basic Auth,在header中自动注入client_id和secret
+    然后Content-Type : application/x-www-form-urlencoded
+    然后在body中附上username和password,
+    即可获取到
+    {
+        "access_token": "b9532f93-0d79-4086-95c5-25f09af8fe91",
+        "token_type": "bearer",
+        "refresh_token": "0b35ffff-a371-4447-a012-900ad02777d4",
+        "expires_in": 43199
+    }
+    
+    然后可以再次模拟之前的用access_token访问/user/me,也就是资源.可以成功获取
+>

@@ -2,6 +2,7 @@ package com.zx.security.core.social.qq.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.social.oauth2.AbstractOAuth2ApiBinding;
@@ -16,6 +17,7 @@ import java.io.IOException;
  */
 @Data
 @Slf4j
+@EqualsAndHashCode(callSuper = false)
 public class QQImpl extends AbstractOAuth2ApiBinding implements QQ {
 
     /**

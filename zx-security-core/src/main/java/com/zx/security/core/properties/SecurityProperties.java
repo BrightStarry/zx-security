@@ -106,6 +106,7 @@ public class SecurityProperties {
          * qq的一些配置属性
          */
         @Data
+        @EqualsAndHashCode(callSuper = false)
         public static class QQProperties extends org.springframework.boot.autoconfigure.social.SocialProperties {
             /**
              * 服务提供商唯一标识
@@ -117,6 +118,7 @@ public class SecurityProperties {
          * 微信相关配置类
          */
         @Data
+        @EqualsAndHashCode(callSuper = false)
         public static class WeiXinProperties extends org.springframework.boot.autoconfigure.social.SocialProperties {
             /**
              * 服务商唯一标识

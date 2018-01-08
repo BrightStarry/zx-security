@@ -20,6 +20,15 @@
         <zx.security.version>1.0-SNAPSHOT</zx.security.version>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-transport</artifactId>
+            <version>4.1.0.Final</version>
+        </dependency>
+
+    </dependencies>
+
     <dependencyManagement>
         <dependencies>
             <!--管理spring的版本-->
