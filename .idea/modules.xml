@@ -8,6 +8,7 @@
       <module fileurl="file://$PROJECT_DIR$/zx-security-browser/zx-security-browser.iml" filepath="$PROJECT_DIR$/zx-security-browser/zx-security-browser.iml" />
       <module fileurl="file://$PROJECT_DIR$/zx-security-core/zx-security-core.iml" filepath="$PROJECT_DIR$/zx-security-core/zx-security-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/zx-security-demo/zx-security-demo.iml" filepath="$PROJECT_DIR$/zx-security-demo/zx-security-demo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zx-web-flux/zx-web-flux.iml" filepath="$PROJECT_DIR$/zx-web-flux/zx-web-flux.iml" />
     </modules>
   </component>
 </project>

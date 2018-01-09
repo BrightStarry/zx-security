@@ -1,5 +1,6 @@
 package com.zx.security.core.validate.code.abstracts;
 
+import com.zx.security.core.validate.CaptchaRepository;
 import com.zx.security.core.validate.code.sms.Captcha;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.social.connect.web.HttpSessionSessionStrategy;
@@ -14,6 +15,10 @@ import java.util.Map;
  * 抽象 验证码处理器类 模版方法
  */
 public abstract class AbstractCaptchaProcessor<C extends Captcha> implements CaptchaProcessor {
+
+
+    @Autowired
+    private CaptchaRepository captchaRepository;
 
     //session策略
     private SessionStrategy sessionStrategy = new HttpSessionSessionStrategy();
@@ -54,8 +59,12 @@ public abstract class AbstractCaptchaProcessor<C extends Captcha> implements Cap
 
         Captcha captcha1 = new Captcha(captcha.getCode(), captcha.getExpireTime());
 
+        //调用不同的存储实现类存储   redis 和 session
+        captchaRepository.put(request,SESSION_CAPTCHA_PRE + type,captcha1);
+
+
         //放入session,根据类型选择不同的key
-        sessionStrategy.setAttribute(request,SESSION_CAPTCHA_PRE + type,captcha1);
+//        sessionStrategy.setAttribute(request,SESSION_CAPTCHA_PRE + type,captcha1);
     }
 
     //最终处理

@@ -275,3 +275,12 @@
     
     然后可以再次模拟之前的用access_token访问/user/me,也就是资源.可以成功获取
 >
+
+* 对于图形验证码和短信验证码登录.在普通表单登录成功后基本应该也能成功.  
+但是因为app中不再使用session.所以.需要更换缓存验证码的逻辑.
+    * 在core中创建CaptchaRepository接口.定义保存/删除/获取 验证码的方法,
+    * 将之前使用session保存/删除/获取验证码的代码,全部用该接口替换.
+    * 在app和browser中分别创建使用redis和session的实现类.即可.
+    * 测试手机号登录. 使用postman先发起获取验证码请求.注意携带deviceId(设备id,用于作为key)
+    * 然后再发起.登录请求,注意使用Basic Auth携带client_id和密码.即可
+    

@@ -1,6 +1,7 @@
 package com.zx.security.core.authentication.mobile;
 
 import com.zx.security.core.properties.SecurityProperties;
+import com.zx.security.core.validate.CaptchaRepository;
 import com.zx.security.core.validate.code.CaptchaException;
 import com.zx.security.core.validate.code.abstracts.CaptchaProcessor;
 import com.zx.security.core.validate.code.image.ImageCaptcha;
@@ -51,6 +52,9 @@ public class SmsCaptchaFilter extends OncePerRequestFilter implements Initializi
 
     @Autowired
     private SecurityProperties securityProperties;
+
+    @Autowired
+    private CaptchaRepository captchaRepository;
 
     //springSecurity中用来判断某个路径是否包含某个路径的工具类,例如/user/** 包含了/user/a
     private AntPathMatcher antPathMatcher = new AntPathMatcher();
@@ -103,8 +107,9 @@ public class SmsCaptchaFilter extends OncePerRequestFilter implements Initializi
 
     //验证验证码是否正确
     private void validate(ServletWebRequest request) throws ServletRequestBindingException {
+        Captcha captcha = captchaRepository.get(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
         //从session中获取正确的验证码
-        Captcha captcha = (Captcha) sessionStrategy.getAttribute(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
+//        Captcha captcha = (Captcha) sessionStrategy.getAttribute(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
         //获取请求中的验证码
         String requestCaptcha = ServletRequestUtils.getStringParameter(request.getRequest(), "smsCaptcha");
 
@@ -113,15 +118,18 @@ public class SmsCaptchaFilter extends OncePerRequestFilter implements Initializi
             throw new CaptchaException("验证码不存在");
         if(StringUtils.isBlank(requestCaptcha))
             throw new CaptchaException("验证码不能为空");
-        if(captcha.isExpired()){
-            sessionStrategy.removeAttribute(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
-            throw new CaptchaException("验证码已经过期");
-        }
+//        if(captcha.isExpired()){
+//            sessionStrategy.removeAttribute(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
+//            throw new CaptchaException("验证码已经过期");
+//        }
         if(!StringUtils.equalsIgnoreCase(captcha.getCode(),requestCaptcha))
             throw new CaptchaException("验证码不正确");
 
+
+
         //执行到此处,表示验证通过
-        sessionStrategy.removeAttribute(request,CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
+//        sessionStrategy.removeAttribute(request,CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
+        captchaRepository.remove(request, CaptchaProcessor.SESSION_CAPTCHA_PRE + "sms");
 
     }
 }

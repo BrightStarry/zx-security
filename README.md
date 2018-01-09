@@ -1,6 +1,7 @@
 #### Spring Security 
-* 此外还有关于异步处理/hibernate validation/文件上传下载/拦截器等/swagger等,在AsyncResult.md  
-* 以及OAuth2协议的介绍和qq登录,在QQLogin.md
+* AsyncResult.md: 关于异步处理/hibernate validation/文件上传下载/拦截器等/swagger等 
+* QQLogin.md: OAuth2协议的介绍和社交登录
+* WebFlux.md: Spring Boot 2.0 + 版本特性 WebFlux异步响应式框架入门
 
 #### 关于设计模式在项目开发中运用的感想
         关于设计模式,我曾经照着一篇博客,敲打过几乎常用的所有设计模式.然后在项目中真正运用得并不多.
@@ -152,6 +153,15 @@ ReflectionToStringBuilder.toString(userQueryCondition, ToStringStyle.MULTI_LINE_
 * 如果在controller中使用springDataJpa的pageable对象接收分页参数，可以用如下注解，来指定其默认值：  
 @PageableDefault(size = 10,page = 0,sort = "username,asc") Pageable pageable
 
+* 使用set集合,如果有排重需求,并且使用的不是java基本类型,最好
+重写hashcode和equals方法.IDEA可以自动生成这两个方法.  
+生成时可以指定比较哪些字段进行排重.一般只比较id即可.
+
+* decimal(20,2): 该类型表示的是18位整形和2位小数.注意..
+
+* 使用Decimal类进行计算时.如果构造函数传入的是Double之类的类型,  
+一样无法保证精度.只有使用String类型的值构造(可以Double.toString).
+然后进行计算才能保证精度.
 #### 搭建环境
 1. 新建项目zx-security
 2. 在该项目下，建立四个子模块  
