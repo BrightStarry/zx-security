@@ -1,5 +1,6 @@
 package com.zx.security.core.social;
 
+import lombok.Setter;
 import org.springframework.social.security.SocialAuthenticationFilter;
 import org.springframework.social.security.SpringSocialConfigurer;
 
@@ -9,9 +10,13 @@ import org.springframework.social.security.SpringSocialConfigurer;
  * 自定义{@link org.springframework.social.security.SpringSocialConfigurer}
  * 用来自定义 回调地址等属性
  */
+@Setter
 public class CustomSpringSocialConfigurer extends SpringSocialConfigurer{
     //该过滤器要处理的url
     private String filterProcessesUrl;
+
+    //返回令牌后的处理器
+    private SocialAuthenticationFilterPostProcessor socialAuthenticationFilterPostProcessor;
 
     //通过构造函数传入
     public CustomSpringSocialConfigurer(String filterProcessesUrl) {
@@ -28,6 +33,10 @@ public class CustomSpringSocialConfigurer extends SpringSocialConfigurer{
         SocialAuthenticationFilter filter = (SocialAuthenticationFilter) super.postProcess(object);
         //修改要处理的url
         filter.setFilterProcessesUrl(filterProcessesUrl);
+        //如果配置了返回令牌策略的处理器,调用
+        if (socialAuthenticationFilterPostProcessor != null) {
+            socialAuthenticationFilterPostProcessor.process(filter);
+        }
         return (T)filter;
     }
 }

@@ -1,7 +1,8 @@
-package com.zx.security.core.social.qq;
+package com.zx.security.core.social;
 
 import com.zx.security.core.properties.SecurityProperties;
 import com.zx.security.core.social.CustomSpringSocialConfigurer;
+import com.zx.security.core.social.SocialAuthenticationFilterPostProcessor;
 import lombok.experimental.Accessors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -39,6 +40,10 @@ public class SocialConfig extends SocialConfigurerAdapter{
     @Autowired(required = false)
     private ConnectionSignUp connectionSignUp;
 
+    //自定义的用来处理返回令牌操作的处理器
+    @Autowired(required = false)
+    private SocialAuthenticationFilterPostProcessor socialAuthenticationFilterPostProcessor;
+
     /**
      * 实现获取UsersConnectionRepository的方法
      *
@@ -68,6 +73,8 @@ public class SocialConfig extends SocialConfigurerAdapter{
         CustomSpringSocialConfigurer configurer = new CustomSpringSocialConfigurer(filterProcessesUrl);
         //修改默认的注册路径
         configurer.signupUrl(securityProperties.getBrowser().getSignUpUrl());
+        //注入返回令牌处理器,可能为空
+        configurer.setSocialAuthenticationFilterPostProcessor(socialAuthenticationFilterPostProcessor);
         return configurer;
     }
 

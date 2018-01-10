@@ -2,6 +2,7 @@ package com.zx.security.app;
 
 import com.zx.security.core.authentication.mobile.SmsCaptchaAuthenticationSecurityConfig;
 import com.zx.security.core.authentication.mobile.SmsCaptchaFilter;
+import com.zx.security.core.authentication.social.OpenIdAuthenticationSecurityConfig;
 import com.zx.security.core.properties.SecurityProperties;
 import com.zx.security.core.validate.code.CaptchaFilter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,20 +49,24 @@ public class CustomResourceServerConfig extends ResourceServerConfigurerAdapter{
     @Autowired
     private SecurityProperties securityProperties;
 
+    @Autowired
+    private OpenIdAuthenticationSecurityConfig openIdAuthenticationSecurityConfig;
+
     @Override
     public void configure(HttpSecurity http) throws Exception {
 
         http
+
                 .apply(zxSocialSecurityConfig).and()
                 //在UsernamePasswordAuthenticationFilter过滤器之前,增加上验证码过滤器
 //                .addFilterBefore(captchaFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(smsCaptchaFilter, UsernamePasswordAuthenticationFilter.class)
 //                .httpBasic()//最原始的弹出框登录,二选一
                 .formLogin()//表单页面登录,二选一
-                    .loginPage("/view/login")//登录页面url
-                    .loginProcessingUrl("/login")//登录方法url,默认就是/login,用post方法
-                    .successHandler(customAuthenticationSuccessHandler)//配置验证成功处理器
-                    .failureHandler(customAuthenticationFailHandler)//配置验证失败处理器
+                .loginPage("/view/login")//登录页面url
+                .loginProcessingUrl("/login")//登录方法url,默认就是/login,用post方法
+                .successHandler(customAuthenticationSuccessHandler)//配置验证成功处理器
+                .failureHandler(customAuthenticationFailHandler)//配置验证失败处理器
                 .and()
                 .authorizeRequests()//进行验证配置
                 .antMatchers("/view/login",
@@ -75,8 +80,11 @@ public class CustomResourceServerConfig extends ResourceServerConfigurerAdapter{
                 .anyRequest()//任何请求
                 .authenticated()//都需验证
                 .and()
-                //追加配置
-                .apply(smsCaptchaAuthenticationSecurityConfig);
+                //追加配置手机验证码过滤器
+                .apply(smsCaptchaAuthenticationSecurityConfig)
+                .and()
+                //追加app 社交登录过滤器链
+                .apply(openIdAuthenticationSecurityConfig);
 
         http.csrf().disable();//暂时关闭csrf,防止跨域请求的防护关闭
     }

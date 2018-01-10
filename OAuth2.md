@@ -283,4 +283,58 @@
     * 在app和browser中分别创建使用redis和session的实现类.即可.
     * 测试手机号登录. 使用postman先发起获取验证码请求.注意携带deviceId(设备id,用于作为key)
     * 然后再发起.登录请求,注意使用Basic Auth携带client_id和密码.即可
-    
+
+
+* 重构社交登录.
+    * 社交登录在使用app后,会通过qq等服务提供商提供的SDK进行授权验证,其流程如下所示
+    ![](image/12.png)
+    * 也可能是简化模式
+    ![](image/13.png)
+    * 无论是简化模式,还是标准模式,当其完成,获取到qq的access_token后,是可以获取到例如qq的用户信息等.  
+        但对于我们自己的项目来说,该用户还是没有登录(我们没有给它access_token).
+    * 我们就可以实现,让社交登录的用户,用它获取到的open_id换取我们的令牌.(一个问题,open_id是不变的.用户信息安全如何保证)
+        其逻辑和手机验证码登录是类似的.
+    * 如下
+    >
+        1. 构造OpenIdAuthenticationToken类封装登录请求(openId和providerId),和登录成功后的用户信息
+        2. 构造OpenIdAuthenticationFilter类过滤自定义的一个社交登录请求,获取到对应请求属性.
+        3. 构造OpenIdAuthenticationProvider类,进行自定义的身份校验.
+        4. 构造配置类,将以上的过滤器及相关类,注入到security过滤器链后.
+    >
+    * 然后测试的时候使用Basic Auth携带providerId和openId.即可(该参数从之前第三方登录成功后的关联表记录中获取测试)
+    * 如此就是使用了简化模式获取access_token
+    * 如果是标准模式的app社交登录.我们之前的代码都有过对应逻辑.  
+        但之前qq之类的服务提供商是将授权码请求发给我们后台的,此时发给了app.那么app需要将该请求一模一样的转发给我们即可.
+    >
+        详细说明下,之前是我们访问 /oauth/qq 这样的请求进行qq登录.因为此时code授权码不存在,social过滤器会将用户
+        导向qq的登录界面.而登录成功后.qq同样会回调该请求.并携带授权码.此时social就会拿着这个授权码去换取令牌.
+        此时,无非是app帮我们做了前面的步骤.并帮我们接收到了授权码回调请求.那么.他只要将该请求参数原封不动的发给
+        我们的/oauth/qq路径即可.
+        
+        
+        但是.在broswer中.获取到qq令牌后的策略是跳转页面.而此时需要返回该令牌.
+        所以定义如下处理器接口
+        SocialAuthenticationFilterPostProcessor.
+        并在CustomSpringSocialConfigurer中额外增加.如果该处理器不为空,调用处理方法
+        然后在SocialConfig类中,注入CustomSpringSocialConfigurer时,设置SocialAuthenticationFilterPostProcessor.
+        最后再在app模块定义了一个处理器接口实现,其实就是将app模块的自定义的成功处理器set给了那个过滤器.让其调用我们自定义的成功处理器.
+        
+        此处不再测试.如果测试.可以先启用broswer模块.在获取到的授权码回调的地方.debug.获取到授权码.然后再开app
+        应用.用postman模拟请求即可(get方式,code=xxx).
+    >
+* 此处,重洗梳理下app社交登录流程.
+    * 首先.我们定义了一个登录方式,就是用openId和providerId换取我们自己的access_token    
+    * 如果是简化模式.app可以直接获取到openId.直接调用我们的登录方式即可.
+    * 如果是标准模式.app在获取到授权码后,需要将其发给我们的社交登录接口
+    (例如/oauth/qq,也就是我们浏览器模块中,用户点击来跳转到qq登录的那个URI).该请求需要携带Basic Auth
+    (也就是app作为我们(我们此时是服务提供商)的第三方应用的client_id和密码),然后我们通过该授权码获取到
+    qq的access_token后.返回给app.然后app再请求我们新定义的openId的登录方式即可.
+
+* 我本来懒得测试标准模式了的.但强迫症让我去测试了一下.
+>
+    结果因为一个bug搞到了现在(2018年1月10日 23:59:26)
+    其表现为,postman模拟发送请求码后,一直未调用successHandler.直接返回注册页面.
+    我一个一个断点分析过去..最后发现其原因只是UsersConnectionRepository类,查询social关联表时
+    查到了两条记录(这两条记录的providerId和openId相同,是我测试微信登录时使用了不同的业务系统用户名产生的..),
+    然后就返回了null(只允许有一条),然后就跳转到了注册页面...删除一条记录后即可.
+>

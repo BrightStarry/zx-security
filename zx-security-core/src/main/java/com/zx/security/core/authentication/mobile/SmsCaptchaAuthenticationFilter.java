@@ -71,7 +71,7 @@ public class SmsCaptchaAuthenticationFilter  extends AbstractAuthenticationProce
     /**
      * 获取手机号的方法
      */
-    protected String obtainPhone(HttpServletRequest request) {
+    private String obtainPhone(HttpServletRequest request) {
         return request.getParameter(phoneParameter);
     }
 
@@ -79,8 +79,8 @@ public class SmsCaptchaAuthenticationFilter  extends AbstractAuthenticationProce
      * 将请求的详细信息,放入SmsCaptchaAuthenticationToken
      *
      */
-    protected void setDetails(HttpServletRequest request,
-                              SmsCaptchaAuthenticationToken authRequest) {
+    private void setDetails(HttpServletRequest request,
+                            SmsCaptchaAuthenticationToken authRequest) {
         authRequest.setDetails(authenticationDetailsSource.buildDetails(request));
     }
 

@@ -16,7 +16,6 @@ import org.springframework.web.context.request.ServletWebRequest;
  */
 @Component
 public class SessionCaptchaRepository implements CaptchaRepository {
-    @Autowired
     private SessionStrategy sessionStrategy = new HttpSessionSessionStrategy();
 
     @Override

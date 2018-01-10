@@ -27,8 +27,13 @@ import java.io.IOException;
  * author:ZhengXing
  * datetime:2017-11-24 20:40
  * 自定义身份验证成功处理器
- * security默认在验证成功后跳转到此前访问的页面,但是如果前端的登录是
- * ajax方式的,不适合跳转页面,所以需要更改成功后的处理
+ * app模块中.该类的作用是.
+ * 我们的其他应用(例如app),会请求我们的access_token.当验证通过后.
+ * 通过该类,将对应的令牌,返回给他们
+ *
+ * 同时.当app的社交登录时,app会引导用户社交登录.同时qq等服务提供商会将授权码返回给app.
+ * 此时就需要app携带该授权码请求我们.成功后.我们会将qq分配的access_token返回回去.
+ * 然后app再根据其openId,向我们请求我们的access_token.
  */
 @Component("customAuthenticationSuccessHandler")
 @Slf4j

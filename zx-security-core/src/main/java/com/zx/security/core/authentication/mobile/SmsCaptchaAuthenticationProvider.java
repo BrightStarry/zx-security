@@ -48,8 +48,11 @@ public class SmsCaptchaAuthenticationProvider implements AuthenticationProvider{
 
 
     /**
-     * 支持的authentication类有哪些
-     * SmsCaptchaAuthenticationToken就是其实现类
+     * 如果过滤器拦截下的,并获取到属性,创建了的对应AuthenticationToken对象,
+     * 符合该类要验证的对象的条件,就返回true,表示支持验证该对象.
+     * 应该是使用了责任链模式
+     *
+     * 此处是判断对象是否是自己定义的那个token类的子类
      */
     @Override
     public boolean supports(Class<?> authentication) {
