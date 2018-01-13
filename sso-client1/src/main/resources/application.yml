@@ -1,0 +1,16 @@
+security:
+  oauth2:
+    client:
+      client-id: client1
+      client-secret: 123456
+      # 当用户未登录时,需要将其引导到该认证服务器地址, 获取授权码
+      user-authorization-uri: http://127.0.0.1:9999/server/oauth/authorize
+      # 获取token的地址
+      access-token-uri: http://127.0.0.1:9999/server/oauth/token
+    resource:
+      jwt:
+        # 获取认证服务器的签名密钥的uri
+        key-uri: http://127.0.0.1:9999/server/oauth/token_key
+server:
+  port: 8080
+  context-path: /client1

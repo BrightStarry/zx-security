@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
  * 实现该接口,可以让social自动调用该方法,
  * 将第一次第三方登录直接注册到业务系统中,不再跳转到绑定或注册页面
  */
-@Component
 public class CustomConnectionSignUp implements ConnectionSignUp{
     /**
      * 根据第三方用户信息. 在业务系统用户表中创建用户,并返回 用户唯一标识,以绑定到social的关联表中

@@ -1,8 +1,8 @@
 package com.zx.secutiry.browser;
 
 import com.zx.security.core.properties.SecurityProperties;
-import com.zx.secutiry.browser.support.SimpleResponse;
-import com.zx.secutiry.browser.support.SocialUserInfo;
+import com.zx.security.core.support.SimpleResponse;
+import com.zx.security.core.support.SocialUserInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

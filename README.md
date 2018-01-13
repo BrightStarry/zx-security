@@ -1,7 +1,26 @@
 #### Spring Security 
 * AsyncResult.md: 关于异步处理/hibernate validation/文件上传下载/拦截器等/swagger等 
 * QQLogin.md: OAuth2协议的介绍和社交登录
+* OAuth2.md: 用Spring Security开发自己的OAuth2协议实现,自己实现服务提供商的功能,分发给其他应用access_token
+* SSO(JWT).md: 基于JWT实现单点登录
+* Dynamic.md:实现了完全动态的权限控制系统.以及spring security框架的大致源码解析.
 * WebFlux.md: Spring Boot 2.0 + 版本特性 WebFlux异步响应式框架入门
+
+
+#### 总结
+该项目实现了许多东西.
+* 基于SpringSecurity框架的表单/验证码/手机验证码登录方式.
+* 基于SpringSocial的社交登录(qq和微信)
+* 基于SpringSecurityOAuth2的,将自己作为认证服务器和资源服务器.并使用社交/表单/验证码/手机验证码登录方式 获取access_token.
+* 将SpringSecurityOAuth2扩展为JWT(json web token),并实现对应的单点登录.
+* 基于SpringSecurity的角色_权限对应的完全动态的权限控制. 例如运行时修改要拦截的url等.
+* Spring Boot2版本增加的WebFlux框架..入门...简陋.
+* Spring MVC异步处理的实现.
+
+#### 总结思想
+    框架的源码其实并不一定有多么深(不是每个框架都和Spring Contetnxt那样的......).
+    看源码能搞清楚很多事情.并且可以学到写轮子的技巧.(对于实际业务开发..用那么多可扩展的设计模式是作死...)
+    
 
 #### 关于设计模式在项目开发中运用的感想
         关于设计模式,我曾经照着一篇博客,敲打过几乎常用的所有设计模式.然后在项目中真正运用得并不多.
@@ -28,6 +47,7 @@
 那么如果在方法上在注解上"/",访问的路径就会为/user/,使用/user将无法访问
 * !!!之前遇到HttpClient发送json串请求controller方法,参数一直为null.是因为没有加@RequestBody.
 * !!!spring boot 属性注入 @ConfigurationProperties 必须有getter/setter方法才能生效 血泪教训
+* IDEA mavenProject窗口中无法刷新出新建的Maven项目,可尝试在Project窗口的项目上右击,选择刷新即可.
 
 #### 重大发现.特大新闻.
 * 一直以来.我都有一个疑问.就是为什么自己配置的@ConfigurationProperties.总是无法在application.yml文件中自动提示.显示无法解析.
@@ -47,6 +67,8 @@ META-INF/spring-configuration-metadata.json. 我以为找到了答案.但是他�
 
 
 #### 奇淫巧技
+* Spring Boot启动类自动扫描的包,是他当前所处的包下面所有的类.所以才会有位置的限制.也可以用@Scan啥的注解自定义
+
 * 如下打包时,可以将所有依赖都打到jar中去运行.基于springboot
 >
     <!--spring boot专门的打包工具，将所有依赖的jar打到一个jar中直接运行-->
@@ -74,8 +96,15 @@ META-INF/spring-configuration-metadata.json. 我以为找到了答案.但是他�
 
 * StringUtils.substringBetween()  截取字符串中,被哪两个首位字符包裹的字符串
 
-* 如下代码表示当配置了该属性时,该bean才注入
-> @ConditionalOnProperty(value = "zx.security.social.qq",name = "appId")
+* ConditionalOnProperty, 根据配置的属性和属性值,判断是否启用bean
+> 
+    @ConditionalOnProperty(prefix = "zx.security.oauth2",//属性前缀
+            name = "storeType",//属性
+            havingValue = "jwt",//预期值
+            matchIfMissing = true//指定属性如果没有设置,条件是否匹配,为true,则没有设置属性时,注入bean
+            //注意,是属性是否设置,而不是是否是该值.如果没设置,注入该bean
+    )
+>
 
 * PasswordEncoder类,可以直接用来加密解密
 

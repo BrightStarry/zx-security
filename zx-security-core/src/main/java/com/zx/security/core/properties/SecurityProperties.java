@@ -2,8 +2,12 @@ package com.zx.security.core.properties;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.springframework.boot.autoconfigure.social.SocialProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * author:ZhengXing
@@ -19,6 +23,10 @@ public class SecurityProperties {
     private CaptchaProperties captcha = new CaptchaProperties();
     //social相关配置
     private SocialProperties social = new SocialProperties();
+    //oauth2相关配置
+    private OAuth2Properties oauth2 = new OAuth2Properties();
+
+
 
     /**
      * browser项目配置属性
@@ -127,4 +135,61 @@ public class SecurityProperties {
         }
 
     }
+
+
+    /**
+     *  Oauth2协议相关配置
+     */
+    @Data
+    public static class OAuth2Properties {
+        /**
+         *  配置第三方应用集合
+         */
+        private List<OAuth2ClientProperties> clients = new ArrayList<>();
+
+        /**
+         * jwt令牌签名密钥
+         */
+        private String jwtSigningKey = "zx";
+
+        /**
+         * 使用的token类型 redis/jwt
+         */
+        private String storeType = "jwt";
+        /**
+         * OAuth2协议 client端 相关配置
+         *
+         * 以下的list默认值之所以使用外层ArrayList再次包装,是因为
+         * Arrays.asList等方法返回的list只是其内部类中的ArrayList类.是一个视图List.
+         * 为防止可能发生的错误.
+         */
+        @Data
+        @EqualsAndHashCode(callSuper = false)
+        public static class OAuth2ClientProperties {
+            /**
+             * 第三方应用id
+             */
+            private String clientId;
+            /**
+             * 第三方应用密钥
+             */
+            private String clientSecret;
+            /**
+             *  令牌有效时间
+             */
+            private Integer accessTokenValiditySeconds = 0;
+
+            /**
+             *  允许访问的OAuth2协议模式集合
+             */
+            private List<String> authorizedGrantTypes = new ArrayList<>(Arrays.asList("refresh_token","password"));
+            /**
+             *  允许使用的权限范围集合
+             */
+            private List<String> scopes = new ArrayList<>(Collections.singletonList("all"));
+        }
+    }
+
+
+
 }

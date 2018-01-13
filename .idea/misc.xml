@@ -6,6 +6,9 @@
         <option value="$PROJECT_DIR$/pom.xml" />
         <option value="$PROJECT_DIR$/zx-webflux/pom.xml" />
         <option value="$PROJECT_DIR$/zx-web-flux/pom.xml" />
+        <option value="$PROJECT_DIR$/sso-server/pom.xml" />
+        <option value="$PROJECT_DIR$/sso-demo/pom.xml" />
+        <option value="$PROJECT_DIR$/test-security/pom.xml" />
       </list>
     </option>
   </component>

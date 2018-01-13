@@ -2,6 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/sso-client1/sso-client1.iml" filepath="$PROJECT_DIR$/sso-client1/sso-client1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sso-client2/sso-client2.iml" filepath="$PROJECT_DIR$/sso-client2/sso-client2.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sso-demo/sso-demo.iml" filepath="$PROJECT_DIR$/sso-demo/sso-demo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sso-server/sso-server.iml" filepath="$PROJECT_DIR$/sso-server/sso-server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/test-security/test-security.iml" filepath="$PROJECT_DIR$/test-security/test-security.iml" />
       <module fileurl="file://$PROJECT_DIR$/zx-async-controller-test/zx-async-controller-test.iml" filepath="$PROJECT_DIR$/zx-async-controller-test/zx-async-controller-test.iml" />
       <module fileurl="file://$PROJECT_DIR$/zx-security.iml" filepath="$PROJECT_DIR$/zx-security.iml" />
       <module fileurl="file://$PROJECT_DIR$/zx-security-app/zx-security-app.iml" filepath="$PROJECT_DIR$/zx-security-app/zx-security-app.iml" />

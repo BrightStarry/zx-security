@@ -3,8 +3,14 @@ package com.zx.web.controller;
 import com.fasterxml.jackson.annotation.JsonView;
 import com.zx.dto.User;
 import com.zx.dto.UserQueryCondition;
-import com.zx.exception.UserNotExistException;
+import com.zx.security.core.properties.SecurityProperties;
+import com.zx.security.social.AppSignUpUtils;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import io.swagger.annotations.ApiOperation;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.social.connect.web.ProviderSignInUtils;
 import org.springframework.validation.BindingResult;
@@ -32,10 +37,17 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/user")
+@Slf4j
 public class UserController {
 
     @Autowired
-    private ProviderSignInUtils providerSignInUtils;
+//    private ProviderSignInUtils providerSignInUtils;
+
+//    @Autowired
+    private AppSignUpUtils appSignUpUtils;
+
+    @Autowired
+    private SecurityProperties securityProperties;
 
 
     /**
@@ -50,8 +62,10 @@ public class UserController {
 
         //将用户唯一标识 传递给 social, social通过request从session中取出第三方用户信息
         //和该唯一标识一起插入到  它自带的 关联表中.
-        providerSignInUtils.doPostSignUp(userId,new ServletWebRequest(request));
+//        providerSignInUtils.doPostSignUp(userId,new ServletWebRequest(request));
+        appSignUpUtils.doPostSignUp(userId,new ServletWebRequest(request));
     }
+
 
 
 
@@ -63,17 +77,29 @@ public class UserController {
 
     /**
      * 获取用户信息
+     *
+     * 原先是从session中取出security框架定义的登录用户信息
+     * 现在替换为解析jwt令牌,并获取其中的自定义信息
      */
+    @SneakyThrows
     @GetMapping("/me")
-    public Object getCurrentUser(@AuthenticationPrincipal UserDetails user) {
-        //一种方法是自己获取
-        //SecurityContextHolder.getContext().getAuthentication()
+    public Object getCurrentUser(Authentication user,HttpServletRequest request) {
+        //获取应用访问携带的jwt格式的access_token
+        //例如bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ6eCIsInNjb3BlIjpbInJlYWQiXSwiZXhwIjoxNTE1ODE3NDczLCJhdXRob3JpdGllcyI6WyJhZG1pbiIsIlJPTEVfVVNFUiJdLCJqdGkiOiIwZjRkZjMxZS0yNjNlLTRlNTEtYWY0MC04ZmQ5ZjkxN2FlMWYiLCJhZ2UiOjIyLCJjbGllbnRfaWQiOiJ6eCJ9.tM9MmC1mJiku-CUNxi2x4n4FIWNOZoW7gbKtE8a1Vyw
+        //bearer后面为jwt
+        String authorization = request.getHeader("Authorization");
+        String token = StringUtils.substringAfter(authorization, "bearer ");
 
-        //第二种方式
-        //直接在方法参数中写Authentication,即可获取
+        Claims claims = Jwts.parser()
+                //设置之前的签名.
+                //此处是解析签名,验证是否被篡改; 但签名时是使用的spring的jwtAccessTokenConverter类,是使用UTF-8编码的.
+                //所以此处也要指定编码
+                .setSigningKey(securityProperties.getOauth2().getJwtSigningKey().getBytes("UTF-8"))
+                .parseClaimsJws(token).getBody();//将其解析为了一个对象,方便获取
 
-        //第三种,只想获取Authentication中的UserDetails
-        //在方法参数中这么写@AuthenticationPrincipal UserDetails user
+        //取出自定义的age字段
+        Integer age = (Integer) claims.get("age");
+        log.info("自定义字段为:{}", age);
 
         return user;
     }

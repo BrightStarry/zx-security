@@ -106,6 +106,12 @@
 并且无法判断是用户给的,还是其他来源.  
 而对于我们写app来说,很适合这种模式.
 
+#### 令牌刷新
+* 携带grant_type: "refresh_token";  refresh_token: 刷新令牌; scope: 原来的scope
+* 请求头的Basic Auth.
+* 然后就可以获得一个新的,
+重置了过期时间(刷新后的过期时间可在client处单独配置CustomAuthorizationServerConfig类,refreshTokenValiditySeconds)的令牌
+
 #### 资源服务器 启用
 * 添加如下类即可
 >
@@ -338,3 +344,245 @@
     查到了两条记录(这两条记录的providerId和openId相同,是我测试微信登录时使用了不同的业务系统用户名产生的..),
     然后就返回了null(只允许有一条),然后就跳转到了注册页面...删除一条记录后即可.
 >
+
+* 重构注册逻辑
+目前,当第一次社交登录时,会跳转到注册页面,注册业务系统用户帐号.而在注册页面时,社交登录已经成功.  
+其返回的数据是存储在session中的.但此时app模块不再使用session.所以需要将其重构,存入redis.
+    * 定义AppSignUpUtils类,完成社交用户信息暂存redis 和 将业务系统用户id和社交用户信息增加到social关联表中
+    * 定义SpringSocialConfigurerPostProcessor类.该类的作用就是为了 当使用app的时候 
+        修改 See{@link SocialConfig#zxSocialSecurityConfig()}这个bean的注册url路径,
+        为一个我们指定的新路径.用来处理注册逻辑
+    * 定义AppSecurityController类,处理注册逻辑.
+    >
+        /**
+         * author:ZhengXing
+         * datetime:2018-01-11 20:51
+         * 用来处理app的注册逻辑
+         */
+        @RestController
+        public class AppSecurityController {
+            /**
+             * 自定义的用来在redis中存储社交帐号信息和在关联表中增加记录的工具类
+             */
+            @Autowired
+            private AppSignUpUtils appSignUpUtils;
+        
+            /**
+             * 框架自带的工具类,需要session支持.
+             * 当社交登录成功后,social框架源码中,已经将用户信息存入了session中.
+             * 然后转发到了我们这个请求.都是内部跳转.
+             * 所以此时仍旧可以从session中获取到社交用户信息
+             */
+            @Autowired
+            private ProviderSignInUtils providerSignInUtils;
+        
+            /**
+             * 当app模块中.用户社交登录成功后.但该社交帐号并未绑定到自己业务系统中的任意帐号,
+             * 则跳转到该注册路径.
+             * 返回社交登录成功的社交帐号信息,让app展示,并引导用户注册.
+             */
+            @GetMapping("/social/signUp")
+            @ResponseStatus(HttpStatus.UNAUTHORIZED)
+            public SocialUserInfo getSocialUserInfo(HttpServletRequest request) {
+                SocialUserInfo userInfo = new SocialUserInfo();
+                //从session中获取第三方用户信息
+                Connection<?> connection = providerSignInUtils.getConnectionFromSession(new ServletWebRequest(request));
+        
+                //将该用户信息存入redis.否则下次app访问.不携带cookie.则session失效.无法再次获取到用户信息.
+                appSignUpUtils.saveConnetionData(new ServletWebRequest(request),connection.createData());
+        
+                return userInfo.setProviderId(connection.getKey().getProviderId())
+                        .setProviderUserId(connection.getKey().getProviderUserId())
+                        .setNickname(connection.getDisplayName())
+                        .setHeadimg(connection.getImageUrl());
+            }
+        }
+    >
+    * 最后在UserController中使用AppSignUpUtils替换原先的ProviderSignUpUtils.以及在安全配置中允许不登录访问注册路径
+    * 测试时,和之前的操作一样.获取到授权码,然后发送给第三方登录路径(也就是qq等服务提供商回调路径)即可.不过,需要多加deviceId.
+        然后,再将用户在app端输入的注册信息,携带上同样的设备id调用/user/register即可.
+
+#### Token配置 
+* 如下配置CustomAuthorizationServerConfig类  
+此外,已经将其配置到SecurityProperties中.可自行配置clients
+>
+    /**
+     * author:ZhengXing
+     * datetime:2018-01-07 21:03
+     * 自定义认证服务配置
+     *
+     * AuthorizationServerConfigurerAdapter有三个config方法,
+     * 分别针对ServerEndpoints/Server/Client的配置
+     *
+     * 我们使用自定义的该配置后,默认的OAuth2AuthorizationServerConfiguration不再生效,所以需要自行注入一些类
+     *
+     * 如下是默认的该配置类
+     * See {@link org.springframework.boot.autoconfigure.security.oauth2.authserver.OAuth2AuthorizationServerConfiguration}
+     */
+    @Configuration
+    @EnableAuthorizationServer //开启认证服务器
+    public class CustomAuthorizationServerConfig extends AuthorizationServerConfigurerAdapter{
+        @Autowired
+        private AuthenticationManager authenticationManager;
+        @Autowired
+        private UserDetailsService userDetailsService;
+        /**
+         * 配置TokenEndpoint
+         *
+         * 将它需要的两个对象注入.因为OAuth2AuthorizationServerConfiguration被我们这个类替换了
+         *
+         */
+        @Override
+        public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+            endpoints.authenticationManager(authenticationManager)
+                    .userDetailsService(userDetailsService);
+        }
+        /**
+         * 配置 第三方应用 client
+         *
+         * 配置它后,yml中的security.oauth2.client失效
+         *
+         * 可以将这些参数也放到外部配置中,此处不做操作
+         * 例如将yml配置注入到list中,然后在此处循环list.就可以构建多个client
+         */
+        @Override
+        public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+            clients
+                    .inMemory()//使用内存存储
+                    .withClient("zx")//使用该client
+                    .secret("123456")//密钥
+                    .accessTokenValiditySeconds(7200)//令牌有效时间,为0时,不过期
+                    .authorizedGrantTypes("refresh_token","password")//允许该应用使用的授权模式s , refresh_token刷新令牌, password密码模式
+                    //有哪些可用权限,随便定义字符.该应用请求时携带的scope必须在该数组中; 配置后,请求时也可以不携带scope,自动有其所有scope
+                    .scopes("all","read","write");
+    //                .and()
+    //                .withClient()//可以这样配置多个client
+        }
+    }
+>
+
+* 如下配置让令牌存入redis,而非内存, 创建并配置TokenStoreConfig类
+>
+    /**
+     * author:ZhengXing
+     * datetime:2018-01-12 19:24
+     * 该类是为了注入redisTokenStore这个bean
+     * 让我们服务端的令牌存储到redis中,而非内存中.
+     */
+    @Configuration
+    public class TokenStoreConfig {
+        //redis连接工厂
+        @Autowired
+        private RedisConnectionFactory redisConnectionFactory;
+    
+        /**
+         * 创建security帮我们构建好的 使用redis 作为 tokenStore的类
+         */
+        @Bean
+        public TokenStore redisTokenStore() {
+            return new RedisTokenStore(redisConnectionFactory);
+        }
+    }
+    
+    然后修改配置类CustomAuthorizationServerConfig,注入
+     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+            endpoints.authenticationManager(authenticationManager)
+                    .userDetailsService(userDetailsService)
+                    .tokenStore(redisTokenStore);
+        }
+>
+
+#### JWT (Json Web Token) 
+* 一种access_token的标准
+* 自包含: 该令牌自身包含了许多信息,而原来的令牌只是UUID(信息另外存储在其他地方,例如redis)
+* 密签: 令牌用指定密钥签名(非加密)过,防止他人篡改.(也就是别人提交一个jwt过来,服务器能识别出该令牌是否是自己原来签发的)  
+    唯一的安全验证
+* 可扩展: 可以存储自定义的其他信息
+* 因为其他人也可以解析出令牌信息,所以令牌中不能存储重要信息.
+
+
+* 在TokenStoreConfig类中,配置JwtTokenConfig类,并让其和原来的redisToken二选一.  
+    并在CustomAuthorizationServerConfig类中注入.
+    使用JwtTokenStore类后,该类中的storeAccessToken(存储令牌方法实现为空),因为他的信息都携带在令牌中了.
+
+* 此时,如果不配置storeType,或者配置其为jwt,即可使用jwt令牌
+* 访问https://www.jsonwebtoken.io/ ,可解析令牌信息
+* (可参考OAuth2.md)此时携带令牌head信息(Authorization : bearer 令牌 )访问/user/me接口,返回空,因为之前的该接口是从session中获取user信息.  
+此时user信息(Authentication对象)直接存储在令牌中,所以将原来的@AuthenticationPrincipal UserDetails user  
+改为Authentication user,即可自动解析出令牌携带的信息,然后创建出Authentication对象
+
+#### 增强JWT,插入自定义信息
+* 在TokenStoreConfig.JwtTokenConfig中配置如下方法
+>
+    /**
+     *  jwt令牌增强器
+     *  用于在jwt中增加自定义信息
+     *  
+     *  业务系统可以通过自定义该类,来覆盖该bean
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "jwtTokenEnhancer")
+    public TokenEnhancer jwtTokenEnhancer() {
+        return new CustomJwtTokenEnhancer();
+    }
+>
+* 配置自定义增强器CustomJwtTokenEnhancer类.
+* 并在CustomAuthorizationServerConfig类中配置如下
+>
+    //启用jwt时,注入
+    if (jwtAccessTokenConverter != null && jwtTokenEnhancer != null) {
+        //增强器链
+        TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+        List<TokenEnhancer> enhancers = new LinkedList<>();
+        enhancers.add(jwtTokenEnhancer);//用于在令牌中追加信息
+        enhancers.add(jwtAccessTokenConverter);//用于将普通的UUID的令牌转为jwt令牌
+        tokenEnhancerChain.setTokenEnhancers(enhancers);
+    
+        endpoints
+                .tokenEnhancer(tokenEnhancerChain)//注入增强器链
+                .accessTokenConverter(jwtAccessTokenConverter);//设置存取token转换器,
+    }
+>
+* 此时再次到https://www.jsonwebtoken.io/解析jwt,就会发现增加的age字段.
+* 但此时访问/user/me,返回的Authentication(用户信息)类,是不会有自定义信息的.因为该类中就没有这些.
+
+* 自定义解析jwt令牌,以返回增强后的令牌
+    1. 依赖,添加在demo模块,因为该解析需要用户自行实现(我觉得可以直接写好对应逻辑,让用户扩展也可以.)
+    >
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.0</version>
+        </dependency>
+    >
+    2. 在方法中获取到jwt,并自行解析出自定义字段
+    >
+            /**
+             * 获取用户信息
+             *
+             * 原先是从session中取出security框架定义的登录用户信息
+             * 现在替换为解析jwt令牌,并获取其中的自定义信息
+             */
+            @SneakyThrows
+            @GetMapping("/me")
+            public Object getCurrentUser(Authentication user,HttpServletRequest request) {
+                //获取应用访问携带的jwt格式的access_token
+                //例如bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJ6eCIsInNjb3BlIjpbInJlYWQiXSwiZXhwIjoxNTE1ODE3NDczLCJhdXRob3JpdGllcyI6WyJhZG1pbiIsIlJPTEVfVVNFUiJdLCJqdGkiOiIwZjRkZjMxZS0yNjNlLTRlNTEtYWY0MC04ZmQ5ZjkxN2FlMWYiLCJhZ2UiOjIyLCJjbGllbnRfaWQiOiJ6eCJ9.tM9MmC1mJiku-CUNxi2x4n4FIWNOZoW7gbKtE8a1Vyw
+                //bearer后面为jwt
+                String authorization = request.getHeader("Authorization");
+                String token = StringUtils.substringAfter(authorization, "bearer ");
+        
+                Claims claims = Jwts.parser()
+                        //设置之前的签名.
+                        //此处是解析签名,验证是否被篡改; 但签名时是使用的spring的jwtAccessTokenConverter类,是使用UTF-8编码的.
+                        //所以此处也要指定编码
+                        .setSigningKey(securityProperties.getOauth2().getJwtSigningKey().getBytes("UTF-8"))
+                        .parseClaimsJws(token).getBody();//将其解析为了一个对象,方便获取
+        
+                //取出自定义的age字段
+                Integer age = (Integer) claims.get("age");
+                log.info("自定义字段为:{}", age);
+        
+                return user;
+            }
+    >

@@ -75,7 +75,8 @@ public class CustomResourceServerConfig extends ResourceServerConfigurerAdapter{
                         securityProperties.getBrowser().getSignUpUrl(),
                         "/user/register",
                         "/session/invalid",
-                        "/logout**")//匹配这些路径
+                        "/logout**",
+                        "/social/signUp")//匹配这些路径
                 .permitAll()//全部允许
                 .anyRequest()//任何请求
                 .authenticated()//都需验证

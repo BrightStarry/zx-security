@@ -14,12 +14,14 @@ spring:
     host: 106.14.7.29
     password: 123456
 security:
-#  basic:
-#    enabled: false #可以暂时关闭spring-security的配置
   oauth2:
     client:
       client-id: zx
       client-secret: 123456
+      access-token-validity-seconds:
+  #  basic:
+  #    enabled: false #可以暂时关闭spring-security的配置
+
 
 
 
@@ -36,14 +38,23 @@ zx:
 #      loginPage: /login.html
     social:
       #可自行配置的回调地址前缀,完整的回调地址是: 该url + "/" + providerId(服务提供商唯一标识)
-      filterProcessesUrl: /qqLogin
+      filterProcessesUrl: /oauth
       qq:
-        appId: 100550231
-        appSecret: 69b6ab57b22f3c2fe6a6149274e3295e
+        appId: 101450725
+        appSecret: 46bf4e9c8ecb8c36561c800181b8e7d4
         #服务提供商唯一标识, 此处为了适配不同的回调url,可做修改
-        providerId: callback.do
+        providerId: qq
       weixin:
         app-id: wxd99431bbff8305a0
         app-secret: 60f78681d063590a469f1b297feff3c4
         provider-id: weixin
-
+    oauth2:
+      clients:
+        - clientId: zx
+          clientSecret: 123456
+          accessTokenValiditySeconds: 100
+          scopes:
+            - all
+            - read
+            - write
+      store-type: jwt

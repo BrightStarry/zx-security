@@ -8,6 +8,10 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="sso-client1" />
+        <module name="sso-client2" />
+        <module name="sso-server" />
+        <module name="test-security" />
         <module name="zx-async-controller-test" />
         <module name="zx-aync-controller-test" />
         <module name="zx-security-app" />
@@ -18,6 +22,11 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel target="1.8">
+      <module name="sso-client1" target="1.8" />
+      <module name="sso-client2" target="1.8" />
+      <module name="sso-demo" target="1.8" />
+      <module name="sso-server" target="1.8" />
+      <module name="test-security" target="1.8" />
       <module name="zx-async-controller-test" target="1.8" />
       <module name="zx-aync-controller-test" target="1.8" />
       <module name="zx-security" target="1.8" />

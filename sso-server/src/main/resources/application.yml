@@ -1,0 +1,6 @@
+server:
+  port: 9999
+  context-path: /server
+security:
+  user:
+    password: 123456 # 配置了一个用户,相当于授权给client的那个用户

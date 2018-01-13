@@ -1,0 +1,22 @@
+server:
+  port: 80
+spring:
+    thymeleaf:
+      cache: false
+      check-template-location: false
+      content-type: text/html
+      check-template: false
+      enabled: true
+      encoding: UTF-8
+      mode: HTML5
+      suffix: .html
+      prefix: classpath:/templates/
+    datasource:
+      url: jdbc:mysql://127.0.0.1:3306/test-security?useEncode=yes&useCharset=UTF-8&useSSL=false
+      driver-class-name: com.mysql.jdbc.Driver
+      username: root
+      password: 123456
+mybatis:
+    configuration:
+      #开启驼峰
+      map-underscore-to-camel-case: true
