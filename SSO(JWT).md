@@ -188,7 +188,7 @@
 
 * 可以和之前一样,配置SsoSecurityConfig类,创建自定义的SsoUserDetailService.
     然后就可以进行表单登录.
-* 但此时还有用户去手动点击授权的步骤,可以如下将其略去
+* 但此时还有用户去手动点击授权的步骤,可以如下将其略去(更好的是,在client的config中.autoApprove(true);方法,自动获取授权.)
 >
     参考WhitelabelApprovalEndpoint类,完成自己的SsoApprovalEndpoint类.
     相当于让框架内部本该跳转到WhitelabelApprovalEndpoint类的请求,跳转到了自己这个类.
@@ -196,3 +196,39 @@
     可以更详细的看代码,实现更好的逻辑.
     
 >
+
+#### 注销登录
+>
+    所谓注销只需将access_token和refresh_token失效即可，我们模仿org.springframework.security.oauth2.provider.endpoint.TokenEndpoint写一个使access_token和refresh_token失效的Endpoint:
+    
+    @FrameworkEndpoint
+    public class RevokeTokenEndpoint {
+    
+        @Autowired
+        @Qualifier("consumerTokenServices")
+        ConsumerTokenServices consumerTokenServices;
+    
+        @RequestMapping(method = RequestMethod.DELETE, value = "/oauth/token")
+        @ResponseBody
+        public String revokeToken(String access_token) {
+            if (consumerTokenServices.revokeToken(access_token)){
+                return "注销成功";
+            }else{
+                return "注销失败";
+            }
+        }
+    }
+>
+
+#### 简述
+* 关于该实现的SSO,目前他的逻辑大致是这样的.
+* 在客户端访问未授权页面时,它将你重定向到/login,然后重定向到认证服务器.你登录完成后,跳回之前的页面.
+* 此时,你在认证服务器处的cookie被记录,该cookie对应的session是登录状态的.
+* 因此,你访问其他应用时,其他应用也将你重定向到认证服务器,此时,认证服务器通过你的session获取到你的登录信息,
+直接将你返回回去.即完成登录(授权步骤通过如上方法已取消)
+* 但是,浏览器每次访问client时不可能自动携带token,那么client也是通过cookie获取到我们的令牌.  
+* 我做了一个测试,如果删除client的cookie,它看似还能直接访问,但其实它还是到认证服务器处重新获取了令牌.
+* 此时,如果同时删除client和认证服务器的cookie,则相当于注销.
+
+#### TODO
+* 找个时间,debug下client和server的认证过程.

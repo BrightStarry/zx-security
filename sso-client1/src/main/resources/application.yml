@@ -1,4 +1,6 @@
 security:
+  basic:
+    enabled: false
   oauth2:
     client:
       client-id: client1
